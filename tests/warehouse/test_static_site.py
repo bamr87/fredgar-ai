@@ -10,7 +10,12 @@ import pytest
 from django.core.management import call_command
 
 from warehouse.models import Company, DerivedMetric, Fact, Filing, FilingDocument
-from warehouse.services.static_site import build_company_context, fmt_value, generate_site
+from warehouse.services.static_site import (
+    FEATURED_LIMIT,
+    build_company_context,
+    fmt_value,
+    generate_site,
+)
 
 FY = {"period_start": datetime.date(2023, 1, 1), "period_end": datetime.date(2023, 12, 31)}
 
@@ -18,32 +23,56 @@ FY = {"period_start": datetime.date(2023, 1, 1), "period_end": datetime.date(202
 @pytest.fixture
 def company(db):
     co = Company.objects.create(
-        cik="0000320193", ticker="AAPL", name="Apple Inc.",
-        sic_code="3571", sic_description="Electronic Computers", hq_state="CA",
+        cik="0000320193",
+        ticker="AAPL",
+        name="Apple Inc.",
+        sic_code="3571",
+        sic_description="Electronic Computers",
+        hq_state="CA",
     )
     Fact.objects.create(
-        company=co, taxonomy="us-gaap", concept="Revenues",
-        value=decimal.Decimal("383285000000"), dimensions={"accn": "0000320193-23-000106"}, **FY
+        company=co,
+        taxonomy="us-gaap",
+        concept="Revenues",
+        value=decimal.Decimal("383285000000"),
+        dimensions={"accn": "0000320193-23-000106"},
+        **FY,
     )
     Fact.objects.create(
-        company=co, taxonomy="us-gaap", concept="CostOfGoodsAndServicesSold",
-        value=decimal.Decimal("214137000000"), **FY
+        company=co,
+        taxonomy="us-gaap",
+        concept="CostOfGoodsAndServicesSold",
+        value=decimal.Decimal("214137000000"),
+        **FY,
     )
     Fact.objects.create(
-        company=co, taxonomy="us-gaap", concept="NetIncomeLoss",
-        value=decimal.Decimal("96995000000"), **FY
+        company=co,
+        taxonomy="us-gaap",
+        concept="NetIncomeLoss",
+        value=decimal.Decimal("96995000000"),
+        **FY,
     )
     DerivedMetric.objects.create(
-        company=co, key="gross_margin", period_end=FY["period_end"],
-        value=decimal.Decimal("0.441"), unit="ratio"
+        company=co,
+        key="gross_margin",
+        period_end=FY["period_end"],
+        value=decimal.Decimal("0.441"),
+        unit="ratio",
     )
     f = Filing.objects.create(
-        company=co, accession_number="0000320193-23-000106", form_type="10-K",
+        company=co,
+        accession_number="0000320193-23-000106",
+        form_type="10-K",
         filing_date=FY["period_end"],
     )
     FilingDocument.objects.create(
-        filing=f, sequence=1, sha1="x", type="10-K", file_name="aapl.htm",
-        content_type="text/html", text="Apple annual report discussion.",
+        filing=f,
+        sequence=1,
+        sha1="x",
+        type="10-K",
+        file_name="aapl.htm",
+        content_type="text/html",
+        text="Apple annual report discussion.",
     )
     return co
 
@@ -66,6 +95,26 @@ def test_build_company_context(company):
     assert any(r["label"] == "Revenue" and r["value"] == 383285000000.0 for r in income["rows"])
     # statement line links to the source filing
     assert any(r["accession"] == "0000320193-23-000106" for r in income["rows"])
+
+
+@pytest.fixture
+def thin_company(db):
+    """A company with facts but no HEADLINE_CONCEPTS present (tests graceful fallback)."""
+    co = Company.objects.create(cik="0000000001", ticker="THIN", name="Thin Data Co")
+    Fact.objects.create(
+        company=co,
+        taxonomy="us-gaap",
+        concept="SomeOtherConcept",
+        value=decimal.Decimal("1"),
+        **FY,
+    )
+    Filing.objects.create(
+        company=co,
+        accession_number="0000000001-23-000001",
+        form_type="10-K",
+        filing_date=FY["period_end"],
+    )
+    return co
 
 
 @pytest.mark.django_db
@@ -133,7 +182,7 @@ def test_generate_site_publishing_extras(company, tmp_path):
 
     # Company pages resolve site-root links via the ../../ prefix.
     page = (tmp_path / "companies" / company.cik / "index.html").read_text()
-    assert '../../about.html' in page
+    assert "../../about.html" in page
 
 
 @pytest.mark.django_db
@@ -150,9 +199,12 @@ def test_publish_static_site_command_skip_sync(company, tmp_path):
     call_command(
         "publish_static_site",
         "--skip-sync",
-        "--tickers", "AAPL,ZZZZ",
-        "--output", str(tmp_path),
-        "--base-url", "https://example.github.io/fredgar-ai",
+        "--tickers",
+        "AAPL,ZZZZ",
+        "--output",
+        str(tmp_path),
+        "--base-url",
+        "https://example.github.io/fredgar-ai",
     )
     assert (tmp_path / "companies" / company.cik / "index.html").exists()
     assert (tmp_path / "about.html").exists()
@@ -165,8 +217,12 @@ def test_publish_static_site_command_fails_when_nothing_publishable(tmp_path):
 
     with pytest.raises(CommandError):
         call_command(
-            "publish_static_site", "--skip-sync", "--tickers", "ZZZZ",
-            "--output", str(tmp_path),
+            "publish_static_site",
+            "--skip-sync",
+            "--tickers",
+            "ZZZZ",
+            "--output",
+            str(tmp_path),
         )
 
 
@@ -185,3 +241,85 @@ def test_publish_site_tolerates_per_ticker_sync_failures(company, tmp_path, monk
     assert summary["companies"] == 1
     assert "SEC unavailable" in summary["errors"]["FAIL"]
     assert (tmp_path / "companies" / company.cik / "index.html").exists()
+
+
+@pytest.mark.django_db
+def test_landing_page_hero_and_stats(company, tmp_path):
+    """index.html is a landing/hero page: real aggregate stats, not the raw company table alone."""
+    generate_site([company], tmp_path)
+    index_html = (tmp_path / "index.html").read_text()
+
+    # Hero content present, and it's the same document as the (relocated) browse table.
+    assert "Every number here traces back to a real SEC filing." in index_html
+    assert 'id="browse"' in index_html
+    assert "companies.csv" in index_html
+
+    # Aggregate stats are real sums over the published companies, rendered as the
+    # JS count-up target (data-count) AND as the no-JS fallback text content.
+    assert 'data-count="1"' in index_html  # company_count
+    assert 'data-count="3"' in index_html  # total_facts (3 facts on the fixture company)
+    assert 'data-count="1"' in index_html  # total_filings
+
+
+@pytest.mark.django_db
+def test_landing_page_demo_widget_shows_real_headline_data(company, tmp_path):
+    """The live JS demo widget must be built from real, already-computed headline data."""
+    generate_site([company], tmp_path)
+    index_html = (tmp_path / "index.html").read_text()
+
+    assert 'id="demo-pills"' in index_html
+    assert 'id="demo-cards"' in index_html
+    assert "AAPL" in index_html  # pill label
+    assert "383,285,000,000" in index_html  # real formatted Revenue figure, not a placeholder
+    assert "XBRL facts" in index_html and "filings behind this page" in index_html
+    assert f"companies/{company.cik}/index.html" in index_html  # "View full profile" link
+    # Progressive enhancement: cards are unconditionally rendered (visible without JS);
+    # JS only toggles which one is active.
+    assert index_html.count('class="example-card') == 1
+
+
+@pytest.mark.django_db
+def test_landing_page_demo_widget_handles_company_without_headline_data(
+    company, thin_company, tmp_path
+):
+    """A company with facts but none of the HEADLINE_CONCEPTS must not crash the build and
+    must render a graceful fallback instead of empty/blank figures."""
+    generate_site([company, thin_company], tmp_path)
+    index_html = (tmp_path / "index.html").read_text()
+
+    assert "Thin Data Co" in index_html
+    assert "Financial snapshot not yet computed for this company." in index_html
+    assert 'data-count="2"' in index_html  # company_count now 2
+
+
+@pytest.mark.django_db
+def test_landing_page_featured_prefers_richer_companies_and_caps_at_limit(db, tmp_path):
+    """Featured selection should prefer companies with headline data and never exceed FEATURED_LIMIT."""
+    companies = []
+    for i in range(FEATURED_LIMIT + 3):
+        co = Company.objects.create(cik=f"{i:010d}", ticker=f"T{i}", name=f"Company {i}")
+        Fact.objects.create(
+            company=co,
+            taxonomy="us-gaap",
+            concept="Revenues",
+            value=decimal.Decimal(1000 + i),
+            **FY,
+        )
+        companies.append(co)
+
+    generate_site(companies, tmp_path)
+    index_html = (tmp_path / "index.html").read_text()
+    assert index_html.count('class="example-card') <= FEATURED_LIMIT
+
+
+@pytest.mark.django_db
+def test_landing_page_feature_tour_links_respect_app_url(company, tmp_path):
+    """App-only capabilities must only link out when an interactive-app URL is configured."""
+    generate_site([company], tmp_path / "no-app")
+    no_app_html = (tmp_path / "no-app" / "index.html").read_text()
+    assert "Compare &amp; peer groups" in no_app_html
+    assert 'href="https://app.example.com/compare"' not in no_app_html
+
+    generate_site([company], tmp_path / "with-app", app_url="https://app.example.com")
+    with_app_html = (tmp_path / "with-app" / "index.html").read_text()
+    assert 'href="https://app.example.com/compare"' in with_app_html

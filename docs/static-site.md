@@ -18,11 +18,29 @@ One page per company (infobox, headline snapshot, financial statements with per-
 source links, derived metrics, leadership, stakeholder index, filings, documents, XBRL fact
 preview) plus:
 
-- `index.html` — searchable company index (client-side filter)
+- `index.html` — the landing/hero page: headline, a live client-side "search a real company"
+  demo widget (built from data already computed per company during the publish loop — no
+  extra queries, no client fetches), a feature tour of what's mirrored here vs. app-only, an
+  editions comparison, a disclosure section, and the full searchable company table (`#browse`,
+  unchanged behavior from before) below the marketing content
 - `about.html` — data sources, methodology, and the two-front-ends story
 - per-company `company.json`, `facts.csv`, `metrics.csv`, `statements.csv`, `filings.csv`,
   `leadership.csv`; site-wide `companies.json` / `companies.csv`
 - `.nojekyll` (always) and `sitemap.xml` / `robots.txt` (when a base URL is configured)
+
+### The landing page's live demo
+
+`generate_site()` collects a small "featured companies" list while it's already looping over
+every company to render their pages — zero additional DB queries. Featured companies are
+preferred by whether they have any of the three demo-shown concepts (Revenue, Net Income,
+Total Assets) and then by richest data (`counts.facts`), capped at `FEATURED_LIMIT` (8). Their
+identity, headline figures, and fact/filing counts are rendered as ordinary server-side HTML
+(`.example-card` elements) — visible and fully readable with JavaScript disabled. A small
+vanilla-JS enhancement (`{% block script %}` in `index.html`) adds a `.js` class to `<html>`,
+which is what actually collapses the cards to one-at-a-time with pill-switching and enables the
+search-filter box; without JS, every example simply renders stacked. Company data with no
+matching headline concept still appears in the demo with a graceful fallback message instead of
+blank figures.
 
 ## The pipeline
 

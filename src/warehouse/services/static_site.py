@@ -1,9 +1,10 @@
 """Static site generator — a browsable, copy/download-friendly site of company
 financials rendered from the warehouse (no live backend needed to view it).
 
-Produces fully static HTML (one page per company + an index with client-side
-search) plus per-company data files (``company.json`` and CSV exports). Reuses the
-computation/profile services so the site shows exactly what the API does.
+Produces fully static HTML (one page per company + a landing/hero index page with
+a live client-side demo and a searchable company table) plus per-company data
+files (``company.json`` and CSV exports). Reuses the computation/profile services
+so the site shows exactly what the API does.
 """
 
 from __future__ import annotations
@@ -54,6 +55,11 @@ STATEMENT_TITLES = {
 # How many fact rows to render inline (the full set is always downloadable).
 FACT_PREVIEW_LIMIT = 100
 
+# Landing-page "try it" demo: concepts shown per featured company (subset of
+# HEADLINE_CONCEPTS) and how many companies to feature.
+FEATURED_CONCEPTS = {"Revenues", "NetIncomeLoss", "Assets"}
+FEATURED_LIMIT = 8
+
 
 def _cik_digits(cik: str) -> str:
     try:
@@ -71,8 +77,7 @@ def sec_company_url(cik: str) -> str:
 
 def sec_filing_url(cik: str, accession: str) -> str:
     return (
-        f"https://www.sec.gov/Archives/edgar/data/{_cik_digits(cik)}/"
-        f"{accession.replace('-', '')}/"
+        f"https://www.sec.gov/Archives/edgar/data/{_cik_digits(cik)}/{accession.replace('-', '')}/"
     )
 
 
@@ -129,9 +134,7 @@ def build_company_context(company: Company) -> dict[str, Any]:
         )
 
     # Headline facts (latest per concept).
-    latest = EdgarAnalyticsService.latest_by_concepts(
-        company, [c for c, _ in HEADLINE_CONCEPTS]
-    )
+    latest = EdgarAnalyticsService.latest_by_concepts(company, [c for c, _ in HEADLINE_CONCEPTS])
     headline = []
     for concept, label in HEADLINE_CONCEPTS:
         row = latest.get(concept)
@@ -210,10 +213,13 @@ def build_company_context(company: Company) -> dict[str, Any]:
             "name": p.person.full_name,
             "title": p.title or ("Director" if p.is_director else "Insider"),
             "roles": ", ".join(
-                r for r, on in (
-                    ("Officer", p.is_officer), ("Director", p.is_director),
+                r
+                for r, on in (
+                    ("Officer", p.is_officer),
+                    ("Director", p.is_director),
                     ("10% owner", p.is_ten_percent_owner),
-                ) if on
+                )
+                if on
             ),
             "first_seen": str(p.first_seen) if p.first_seen else "",
             "last_seen": str(p.last_seen) if p.last_seen else "",
@@ -255,12 +261,12 @@ def build_company_context(company: Company) -> dict[str, Any]:
         "leadership": len(leadership),
     }
     sync = getattr(company, "edgar_sync", None)
-    facts_as_of = (
-        sync.facts_synced_at.date().isoformat() if sync and sync.facts_synced_at else None
+    facts_as_of = sync.facts_synced_at.date().isoformat() if sync and sync.facts_synced_at else None
+    identifiers = (
+        list(company.identifiers.values("system", "value"))
+        if hasattr(company, "identifiers")
+        else []
     )
-    identifiers = list(company.identifiers.values("system", "value")) if hasattr(
-        company, "identifiers"
-    ) else []
 
     return {
         "company": {
@@ -302,12 +308,22 @@ def build_company_context(company: Company) -> dict[str, Any]:
 def _write_company_data_files(company: Company, ctx: dict[str, Any], cdir: Path) -> None:
     # Full profile JSON (the API /profile/ payload + computed context).
     (cdir / "company.json").write_text(
-        json.dumps({"company": ctx["company"], "counts": ctx["counts"],
-                    "statements": ctx["statements"], "metrics": ctx["metrics"],
-                    "leadership": ctx["leadership"], "stakeholder": ctx["stakeholder"],
-                    "leadership_analysis": ctx["leadership_analysis"],
-                    "filings": ctx["filings"], "documents": ctx["documents"],
-                    "facts_as_of": ctx["facts_as_of"]}, indent=2, default=str),
+        json.dumps(
+            {
+                "company": ctx["company"],
+                "counts": ctx["counts"],
+                "statements": ctx["statements"],
+                "metrics": ctx["metrics"],
+                "leadership": ctx["leadership"],
+                "stakeholder": ctx["stakeholder"],
+                "leadership_analysis": ctx["leadership_analysis"],
+                "filings": ctx["filings"],
+                "documents": ctx["documents"],
+                "facts_as_of": ctx["facts_as_of"],
+            },
+            indent=2,
+            default=str,
+        ),
         encoding="utf-8",
     )
     # Leadership CSV.
@@ -324,7 +340,12 @@ def _write_company_data_files(company: Company, ctx: dict[str, Any], cdir: Path)
         _rows_to_csv(
             ["key", "period_end", "value", "unit"],
             [
-                {"key": m["key"], "period_end": m["period_end"], "value": m["value"], "unit": m["unit"]}
+                {
+                    "key": m["key"],
+                    "period_end": m["period_end"],
+                    "value": m["value"],
+                    "unit": m["unit"],
+                }
                 for m in ctx["metrics"]
             ],
         ),
@@ -332,8 +353,13 @@ def _write_company_data_files(company: Company, ctx: dict[str, Any], cdir: Path)
     )
     # Statements CSV (flattened).
     stmt_rows = [
-        {"statement": s["type"], "period_end": s["period_end"], "line_item": r["label"],
-         "value": r["value"], "accession": r["accession"]}
+        {
+            "statement": s["type"],
+            "period_end": s["period_end"],
+            "line_item": r["label"],
+            "value": r["value"],
+            "accession": r["accession"],
+        }
         for s in ctx["statements"]
         for r in s["rows"]
     ]
@@ -346,7 +372,10 @@ def _write_company_data_files(company: Company, ctx: dict[str, Any], cdir: Path)
         _rows_to_csv(
             ["form_type", "filing_date", "accession_number", "period_of_report"],
             [
-                {k: f[k] for k in ("form_type", "filing_date", "accession_number", "period_of_report")}
+                {
+                    k: f[k]
+                    for k in ("form_type", "filing_date", "accession_number", "period_of_report")
+                }
                 for f in ctx["filings"]
             ],
         ),
@@ -362,11 +391,16 @@ def _write_company_data_files(company: Company, ctx: dict[str, Any], cdir: Path)
     w = csv.writer(buf)
     w.writerow(["concept", "taxonomy", "period_start", "period_end", "unit", "value"])
     for fct in fact_qs.iterator(chunk_size=2000):
-        w.writerow([
-            fct["concept"], fct["taxonomy"], fct["period_start"] or "",
-            fct["period_end"] or "", fct["unit"] or "",
-            fct["value"] if fct["value"] is not None else "",
-        ])
+        w.writerow(
+            [
+                fct["concept"],
+                fct["taxonomy"],
+                fct["period_start"] or "",
+                fct["period_end"] or "",
+                fct["unit"] or "",
+                fct["value"] if fct["value"] is not None else "",
+            ]
+        )
     (cdir / "facts.csv").write_text(buf.getvalue(), encoding="utf-8")
 
 
@@ -382,6 +416,52 @@ def _site_links(
         "base_url": pick(base_url, "STATIC_SITE_BASE_URL"),
         "app_url": pick(app_url, "STATIC_SITE_APP_URL"),
         "source_url": pick(source_url, "STATIC_SITE_SOURCE_URL"),
+    }
+
+
+def _featured_candidate(company: Company, ctx: dict[str, Any], href: str) -> dict[str, Any]:
+    """A lightweight per-company snapshot for the landing page's live demo widget.
+
+    Built entirely from fields ``build_company_context`` already computed for the
+    company's own page — no extra DB queries.
+    """
+    return {
+        "cik": company.cik,
+        "ticker": ctx["company"]["ticker"] or "",
+        "name": ctx["company"]["name"],
+        "industry": ctx["company"]["industry"] or ctx["company"]["sic_description"] or "",
+        "href": href,
+        "facts": ctx["counts"]["facts"],
+        "filings": ctx["counts"]["filings"],
+        "headline": [h for h in ctx["headline"] if h["concept"] in FEATURED_CONCEPTS][:3],
+    }
+
+
+def _build_landing_context(
+    index_rows: list[dict[str, Any]], featured_candidates: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """Aggregate stats + a curated "featured companies" set for the landing page.
+
+    Everything here is derived from data already computed during the per-company
+    loop in ``generate_site`` — no new queries, no live network calls at view time.
+    """
+    total_facts = sum(r["facts"] for r in index_rows)
+    total_filings = sum(r["filings"] for r in index_rows)
+    with_sic = sum(1 for r in index_rows if r["sic_code"])
+    pct_sic = round(100 * with_sic / len(index_rows)) if index_rows else 0
+    # Prefer companies with an actual financial snapshot to show; richest-data
+    # companies (most facts) make the best demo, so use that as the tiebreaker.
+    featured = sorted(
+        featured_candidates,
+        key=lambda f: (1 if f["headline"] else 0, f["facts"]),
+        reverse=True,
+    )[:FEATURED_LIMIT]
+    return {
+        "company_count": len(index_rows),
+        "total_facts": total_facts,
+        "total_filings": total_filings,
+        "pct_sic": pct_sic,
+        "featured": featured,
     }
 
 
@@ -406,6 +486,7 @@ def generate_site(
     site = _site_links(base_url, app_url, source_url)
 
     index_rows: list[dict[str, Any]] = []
+    featured_candidates: list[dict[str, Any]] = []
     pages = 0
     for company in companies:
         ctx = build_company_context(company)
@@ -418,6 +499,7 @@ def generate_site(
             render_to_string("staticsite/company.html", ctx), encoding="utf-8"
         )
         _write_company_data_files(company, ctx, cdir)
+        href = f"companies/{company.cik}/index.html"
         index_rows.append(
             {
                 "cik": company.cik,
@@ -428,15 +510,19 @@ def generate_site(
                 "hq": ctx["company"]["hq"],
                 "facts": ctx["counts"]["facts"],
                 "filings": ctx["counts"]["filings"],
-                "href": f"companies/{company.cik}/index.html",
+                "href": href,
             }
         )
+        featured_candidates.append(_featured_candidate(company, ctx, href))
         pages += 1
 
     index_rows.sort(key=lambda r: r["name"].lower())
     base_ctx = {"generated_at": stamp, "site": site, "root": ""}
+    landing_ctx = _build_landing_context(index_rows, featured_candidates)
     (out / "index.html").write_text(
-        render_to_string("staticsite/index.html", {"companies": index_rows, **base_ctx}),
+        render_to_string(
+            "staticsite/index.html", {"companies": index_rows, **landing_ctx, **base_ctx}
+        ),
         encoding="utf-8",
     )
     (out / "about.html").write_text(
@@ -467,9 +553,7 @@ def _write_seo_files(
     urls = [f"{base_url}/index.html", f"{base_url}/about.html"] + [
         f"{base_url}/{r['href']}" for r in index_rows
     ]
-    entries = "\n".join(
-        f"  <url><loc>{u}</loc><lastmod>{stamp}</lastmod></url>" for u in urls
-    )
+    entries = "\n".join(f"  <url><loc>{u}</loc><lastmod>{stamp}</lastmod></url>" for u in urls)
     (out / "sitemap.xml").write_text(
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'

@@ -1,7 +1,207 @@
 {% extends "staticsite/base.html" %}
-{% block title %}Fredgar AI — Company Financials Index{% endblock %}
+{% block title %}Fredgar AI — SEC EDGAR company financials, source-cited{% endblock %}
+
+{% block extra_style %}
+<style>
+  .hero{padding:48px 0 20px}
+  .hero h1{font-size:36px;max-width:820px;letter-spacing:-.8px}
+  .hero .sub{font-size:16px;max-width:640px;margin-bottom:1.4em}
+  .cta-row{display:flex;gap:10px;flex-wrap:wrap;margin:1.2em 0}
+  .cta-row .btn{padding:9px 16px;font-size:14px}
+  .stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:1.6em 0 .6em}
+  .stat-tile{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;background:var(--surface)}
+  .stat-tile .v{font-size:26px;font-weight:700;font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+  .stat-tile .k{color:var(--muted);font-size:13px;margin-top:2px}
+  .freshness{color:var(--subtle);font-size:12.5px;margin:.4em 0 0}
+
+  .why-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:1em 0 0}
+  .why-row div{border-left:3px solid var(--accent);padding:2px 0 2px 10px;font-size:14px;color:var(--muted)}
+
+  .demo-lead{color:var(--muted);font-size:14px;margin:.2em 0 1em}
+  .pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+  .pill{font:13px inherit;border:1px solid var(--line-strong);background:var(--chip);color:var(--ink);
+    border-radius:999px;padding:5px 13px;cursor:pointer}
+  .pill.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text);font-weight:600}
+  .example-card{display:block;border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;
+    margin-bottom:12px;background:var(--surface)}
+  .js .example-card{display:none}
+  .js .example-card.active{display:block}
+  .example-card .name{font-size:17px;font-weight:700}
+  .example-card .meta{color:var(--muted);font-size:13px;margin:.15em 0 .8em}
+  .metric-row{display:flex;flex-wrap:wrap;gap:22px;margin:.6em 0}
+  .metric-row .metric .v{font-size:20px;font-weight:700;font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+  .metric-row .metric .k{color:var(--muted);font-size:12px}
+  .metric-row .metric .p{color:var(--subtle);font-size:11.5px}
+  .prov-chip{display:inline-block;background:var(--positive-soft);color:var(--positive);border-radius:999px;
+    padding:2px 10px;font-size:12px;margin:.4em 0}
+
+  .feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:1em 0}
+  .feature-card{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;background:var(--surface)}
+  .feature-card h3{margin:.1em 0 .3em;font-size:15px}
+  .feature-card p{margin:.2em 0 .7em;font-size:13.5px;color:var(--muted)}
+  .tag-mirror,.tag-app{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:600}
+  .tag-mirror{background:var(--positive-soft);color:var(--positive)}
+  .tag-app{background:var(--accent-soft);color:var(--accent-text)}
+
+  .editions{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin:1em 0}
+  .edition-card{border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;background:var(--surface)}
+  .edition-card h3{margin:.1em 0 .5em}
+  .edition-card p{font-size:13.5px;color:var(--muted)}
+
+  .grounded-list{list-style:none;margin:1em 0;padding:0;display:grid;gap:8px}
+  .grounded-list li{border-left:3px solid var(--line-strong);padding:2px 0 2px 10px;font-size:13.5px;color:var(--muted)}
+</style>
+{% endblock %}
+
 {% block content %}
-<h1>Company financials index</h1>
+<section class="hero">
+  <h1>Every number here traces back to a real SEC filing.</h1>
+  <p class="sub">Fredgar AI extracts SEC EDGAR filings and XBRL facts into a queryable, source-cited
+    company warehouse, computed with a transparent, reviewable formula set — never a black box.
+    This page is the free, no-login static mirror of that warehouse.</p>
+  <div class="cta-row">
+    {% if site.app_url %}<a class="btn btn-primary" href="{{ site.app_url }}/" target="_blank" rel="noreferrer">Open the interactive app ↗</a>{% endif %}
+    <a class="btn" href="#demo">Explore the data ↓</a>
+  </div>
+  <div class="stat-row">
+    <div class="stat-tile"><div class="v" data-count="{{ company_count }}">{{ company_count }}</div><div class="k">companies tracked</div></div>
+    <div class="stat-tile"><div class="v" data-count="{{ total_filings }}">{{ total_filings }}</div><div class="k">filings indexed</div></div>
+    <div class="stat-tile"><div class="v" data-count="{{ total_facts }}">{{ total_facts }}</div><div class="k">XBRL facts extracted, each linked to its filing</div></div>
+  </div>
+  <p class="freshness">Rebuilt {{ generated_at }} directly from <a href="https://www.sec.gov/edgar" target="_blank" rel="noreferrer">data.sec.gov</a>.</p>
+</section>
+
+<h2>Why this exists</h2>
+<p>SEC EDGAR filings are public, but raw XBRL, unindexed filing text, and no easy way to track
+  capital-allocation behavior over time make that record hard to use at scale. Fredgar AI extracts
+  the facts, computes metrics with a transparent formula set, and links every number back to the
+  filing it came from.</p>
+<div class="why-row">
+  <div>Extracted from primary sources</div>
+  <div>Computed with reviewable formulas</div>
+  <div>Every figure links to its filing</div>
+</div>
+
+<h2 id="demo">Try it — search a real company</h2>
+{% if featured %}
+<p class="demo-lead">Search the {{ featured|length }} compan{{ featured|length|pluralize:"y,ies" }} below.
+  This runs entirely in your browser against data already on this page — no server, no fetch.</p>
+<input id="demo-q" class="search" type="search" placeholder="Filter by name, ticker, or industry…"
+       autocomplete="off" aria-label="Filter example companies">
+<div class="pills" id="demo-pills" role="tablist" aria-label="Example companies">
+  {% for f in featured %}
+  <button type="button" class="pill{% if forloop.first %} active{% endif %}" data-idx="{{ forloop.counter0 }}"
+          data-search="{{ f.name|lower }} {{ f.ticker|lower }} {{ f.industry|lower }}"
+          aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}">{{ f.ticker|default:f.name }}</button>
+  {% endfor %}
+</div>
+<div id="demo-cards">
+  {% for f in featured %}
+  <article class="example-card{% if forloop.first %} active{% endif %}" data-idx="{{ forloop.counter0 }}">
+    <div class="name">{{ f.name }}{% if f.ticker %} <span class="muted">({{ f.ticker }})</span>{% endif %}</div>
+    <div class="meta">{% if f.industry %}{{ f.industry }}{% else %}CIK {{ f.cik }}{% endif %}</div>
+    {% if f.headline %}
+    <div class="metric-row">
+      {% for h in f.headline %}
+      <div class="metric"><div class="v">{{ h.value_display }}</div><div class="k">{{ h.label }}</div><div class="p">{{ h.period_end }}</div></div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted small">Financial snapshot not yet computed for this company.</p>
+    {% endif %}
+    <div><span class="prov-chip">{{ f.facts }} XBRL facts · {{ f.filings }} filings behind this page</span></div>
+    <p class="small"><a href="{{ f.href }}">View full profile →</a></p>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<p class="muted">Example company data isn't available in this build yet.</p>
+{% endif %}
+
+<h2 id="features">What's in a company profile</h2>
+<p class="demo-lead">A Fredgar AI company page has several tabs. Four are mirrored right here on every
+  static page; cross-company comparison and macro data live in the interactive app.</p>
+{% with fc=featured.0 %}
+<div class="feature-grid">
+  <div class="feature-card">
+    <span class="tag-mirror">On this page</span>
+    <h3>Financial statements &amp; KPIs</h3>
+    <p>Income statement, balance sheet, and cash flow, computed from XBRL facts. Every line item
+      links to its source filing.</p>
+    {% if fc %}<a href="{{ fc.href }}#statements">See it on {{ fc.ticker|default:fc.name }} →</a>{% endif %}
+  </div>
+  <div class="feature-card">
+    <span class="tag-mirror">On this page</span>
+    <h3>Filing documents</h3>
+    <p>Ingested filing text per company, with excerpt previews and CSV/JSON download.</p>
+    {% if fc %}<a href="{{ fc.href }}#documents">See it on {{ fc.ticker|default:fc.name }} →</a>{% endif %}
+  </div>
+  <div class="feature-card">
+    <span class="tag-mirror">On this page</span>
+    <h3>Leadership &amp; stakeholder orientation</h3>
+    <p>Officers, directors, and owners from SEC Forms 3/4/5, plus a transparent capital-allocation
+      heuristic — not a rating of any person.</p>
+    {% if fc %}<a href="{{ fc.href }}#leadership">See it on {{ fc.ticker|default:fc.name }} →</a>{% endif %}
+  </div>
+  <div class="feature-card">
+    <span class="tag-mirror">On this page</span>
+    <h3>XBRL facts</h3>
+    <p>Every raw XBRL fact synced for a company, searchable and downloadable as CSV.</p>
+    {% if fc %}<a href="{{ fc.href }}#facts">See it on {{ fc.ticker|default:fc.name }} →</a>{% endif %}
+  </div>
+  <div class="feature-card">
+    <span class="tag-app">Interactive app</span>
+    <h3>Compare &amp; peer groups</h3>
+    <p>Benchmark a financial concept across an industry, HQ state, or a curated peer group.</p>
+    {% if site.app_url %}<a href="{{ site.app_url }}/compare" target="_blank" rel="noreferrer">Open ↗</a>{% endif %}
+  </div>
+  <div class="feature-card">
+    <span class="tag-app">Interactive app</span>
+    <h3>Macro series</h3>
+    <p>FRED macro series organized into theme bundles, with Grid/Overlay/Table views and unit transforms.</p>
+    {% if site.app_url %}<a href="{{ site.app_url }}/macro" target="_blank" rel="noreferrer">Open ↗</a>{% endif %}
+  </div>
+  <div class="feature-card">
+    <span class="tag-app">Interactive app</span>
+    <h3>Warehouse-wide filing search</h3>
+    <p>Full-text search across every ingested filing document, not just one company at a time.</p>
+    {% if site.app_url %}<a href="{{ site.app_url }}/search" target="_blank" rel="noreferrer">Open ↗</a>{% endif %}
+  </div>
+</div>
+{% endwith %}
+
+<h2 id="editions">Two ways in, same data</h2>
+<div class="editions">
+  <div class="edition-card">
+    <h3>This static mirror</h3>
+    <p>Public, read-only, no account. Rebuilt on a schedule from SEC EDGAR. Browse, search, and
+      download CSV/JSON. You're looking at it now.</p>
+    <a href="#browse">Browse companies ↓</a>
+  </div>
+  <div class="edition-card">
+    <h3>Interactive app</h3>
+    <p>Live sync from SEC EDGAR and FRED on demand. Cohort comparison, peer groups, full-text
+      search, macro series, and an optional AI-assisted leadership analysis.</p>
+    {% if site.app_url %}<a href="{{ site.app_url }}/" target="_blank" rel="noreferrer">Open the interactive app ↗</a>{% endif %}
+  </div>
+</div>
+<p class="small muted">Both are rendered from the exact same services — this mirror isn't a lesser
+  copy. <a href="{{ root }}about.html">See the full comparison →</a></p>
+
+<h2 id="grounded">Grounded, not black-box</h2>
+<ul class="grounded-list">
+  <li>Derived metrics are computed with a transparent, reviewable formula set — never a black-box
+    model prediction.</li>
+  <li>Every fact and filing links back to its source on SEC EDGAR.</li>
+  <li>The optional AI leadership analyzer extracts initiatives and quotes strictly from a company's
+    own filing excerpts, verbatim only — off by default, with no API call unless configured.</li>
+  <li>The stakeholder orientation index is a capital-allocation heuristic, not a rating, score, or
+    judgment of any named person.</li>
+  <li>Nothing on this site is investment, financial, HR, or legal advice.</li>
+</ul>
+<p class="small"><a href="{{ root }}about.html#data">Full methodology and data sourcing →</a></p>
+
+<h2 id="browse">Browse the full warehouse</h2>
 <p class="sub">{{ companies|length }} compan{{ companies|length|pluralize:"y,ies" }} ·
   SEC EDGAR XBRL facts, derived metrics, and filings — each with copy &amp; download.</p>
 
@@ -39,13 +239,55 @@
 (function(){
   var q=document.getElementById('q'), rows=[].slice.call(document.querySelectorAll('#companies tbody tr'));
   var empty=document.getElementById('empty');
-  q.addEventListener('input',function(){
-    var v=q.value.trim().toLowerCase(), shown=0;
-    rows.forEach(function(r){
-      var hit = !v || r.getAttribute('data-text').indexOf(v)!==-1;
-      r.style.display = hit ? '' : 'none'; if(hit) shown++;
+  if(q){
+    q.addEventListener('input',function(){
+      var v=q.value.trim().toLowerCase(), shown=0;
+      rows.forEach(function(r){
+        var hit = !v || r.getAttribute('data-text').indexOf(v)!==-1;
+        r.style.display = hit ? '' : 'none'; if(hit) shown++;
+      });
+      empty.style.display = shown ? 'none' : '';
     });
-    empty.style.display = shown ? 'none' : '';
+  }
+})();
+(function(){
+  // Progressive enhancement: without JS every example card is shown stacked
+  // (still fully functional); with JS, collapse to one card with pill-switching.
+  document.documentElement.classList.add('js');
+  var pills=[].slice.call(document.querySelectorAll('#demo-pills .pill'));
+  var cards=[].slice.call(document.querySelectorAll('#demo-cards .example-card'));
+  pills.forEach(function(p){
+    p.addEventListener('click', function(){
+      var idx=p.getAttribute('data-idx');
+      pills.forEach(function(x){ var on=x===p; x.classList.toggle('active',on); x.setAttribute('aria-pressed', on?'true':'false'); });
+      cards.forEach(function(c){ c.classList.toggle('active', c.getAttribute('data-idx')===idx); });
+    });
+  });
+  var dq=document.getElementById('demo-q');
+  if(dq){
+    dq.addEventListener('input', function(){
+      var v=dq.value.trim().toLowerCase();
+      pills.forEach(function(p){
+        var hit = !v || p.getAttribute('data-search').indexOf(v)!==-1;
+        p.style.display = hit ? '' : 'none';
+      });
+    });
+  }
+})();
+(function(){
+  // Animate hero stat tiles up from 0 to their real, server-rendered value.
+  var els=[].slice.call(document.querySelectorAll('.stat-tile .v[data-count]'));
+  els.forEach(function(el){
+    var target=parseInt(el.getAttribute('data-count'),10);
+    if(!isFinite(target)) return;
+    var start=null, duration=700;
+    function step(ts){
+      if(!start) start=ts;
+      var p=Math.min((ts-start)/duration,1);
+      el.textContent=Math.round(target*p).toLocaleString();
+      if(p<1) requestAnimationFrame(step); else el.textContent=target.toLocaleString();
+    }
+    requestAnimationFrame(step);
   });
 })();
 {% endblock %}
