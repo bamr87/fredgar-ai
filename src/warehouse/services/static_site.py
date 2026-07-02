@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import csv
 import datetime
+import heapq
 import io
 import json
 from pathlib import Path
@@ -434,6 +435,10 @@ def _featured_candidate(company: Company, ctx: dict[str, Any], href: str) -> dic
         "facts": ctx["counts"]["facts"],
         "filings": ctx["counts"]["filings"],
         "headline": [h for h in ctx["headline"] if h["concept"] in FEATURED_CONCEPTS][:3],
+        # Whether the company page renders a "#leadership" anchor, so the landing
+        # page only deep-links to sections that actually exist (leadership sync is
+        # best-effort and may yield nothing).
+        "has_leadership": ctx["counts"]["leadership"] > 0,
     }
 
 
@@ -445,22 +450,22 @@ def _build_landing_context(
     Everything here is derived from data already computed during the per-company
     loop in ``generate_site`` — no new queries, no live network calls at view time.
     """
-    total_facts = sum(r["facts"] for r in index_rows)
-    total_filings = sum(r["filings"] for r in index_rows)
-    with_sic = sum(1 for r in index_rows if r["sic_code"])
-    pct_sic = round(100 * with_sic / len(index_rows)) if index_rows else 0
+    total_facts = 0
+    total_filings = 0
+    for r in index_rows:
+        total_facts += r["facts"]
+        total_filings += r["filings"]
     # Prefer companies with an actual financial snapshot to show; richest-data
     # companies (most facts) make the best demo, so use that as the tiebreaker.
-    featured = sorted(
+    featured = heapq.nlargest(
+        FEATURED_LIMIT,
         featured_candidates,
         key=lambda f: (1 if f["headline"] else 0, f["facts"]),
-        reverse=True,
-    )[:FEATURED_LIMIT]
+    )
     return {
         "company_count": len(index_rows),
         "total_facts": total_facts,
         "total_filings": total_filings,
-        "pct_sic": pct_sic,
         "featured": featured,
     }
 

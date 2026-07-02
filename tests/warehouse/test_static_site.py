@@ -9,7 +9,15 @@ import json
 import pytest
 from django.core.management import call_command
 
-from warehouse.models import Company, DerivedMetric, Fact, Filing, FilingDocument
+from warehouse.models import (
+    Company,
+    DerivedMetric,
+    Fact,
+    Filing,
+    FilingDocument,
+    LeadershipPosition,
+    Person,
+)
 from warehouse.services.static_site import (
     FEATURED_LIMIT,
     build_company_context,
@@ -323,3 +331,63 @@ def test_landing_page_feature_tour_links_respect_app_url(company, tmp_path):
     generate_site([company], tmp_path / "with-app", app_url="https://app.example.com")
     with_app_html = (tmp_path / "with-app" / "index.html").read_text()
     assert 'href="https://app.example.com/compare"' in with_app_html
+
+
+@pytest.mark.django_db
+def test_landing_deep_links_only_target_existing_anchors(company, tmp_path):
+    """Feature-tour deep links must not point at company-page sections that don't exist.
+
+    The publish pipeline never ingests FilingDocuments, so the mirror has no
+    ``#documents`` section; and leadership is best-effort, so ``#leadership`` is
+    only linked when the exemplar company actually has leadership data.
+    """
+    # The `company` fixture has facts/statements/metrics but no LeadershipPosition
+    # and no ingested documents.
+    generate_site([company], tmp_path)
+    index_html = (tmp_path / "index.html").read_text()
+
+    # The dropped "Filing documents" card must be gone entirely (no dangling anchor).
+    assert "#documents" not in index_html
+    # Always-present sections are safe to deep-link.
+    assert f"companies/{company.cik}/index.html#statements" in index_html
+    assert f"companies/{company.cik}/index.html#metrics" in index_html
+    assert f"companies/{company.cik}/index.html#facts" in index_html
+    # No leadership data -> the leadership card links to the page (no #leadership fragment).
+    assert f'href="companies/{company.cik}/index.html#leadership"' not in index_html
+
+
+@pytest.mark.django_db
+def test_landing_leadership_deep_link_appears_when_data_exists(tmp_path):
+    """When the featured company has leadership data, the #leadership anchor is linked."""
+    co = Company.objects.create(cik="0000000042", ticker="LEAD", name="Leader Co")
+    Fact.objects.create(
+        company=co,
+        taxonomy="us-gaap",
+        concept="Revenues",
+        value=decimal.Decimal("100"),
+        **FY,
+    )
+    person = Person.objects.create(full_name="Jane Executive")
+    LeadershipPosition.objects.create(
+        company=co,
+        person=person,
+        title="Chief Executive Officer",
+        is_officer=True,
+        is_director=True,
+        first_seen=FY["period_end"],
+        last_seen=FY["period_end"],
+        filings_count=3,
+        net_insider_shares=decimal.Decimal("0"),
+    )
+
+    generate_site([co], tmp_path)
+    index_html = (tmp_path / "index.html").read_text()
+    assert f'href="companies/{co.cik}/index.html#leadership"' in index_html
+
+
+@pytest.mark.django_db
+def test_landing_demo_widget_has_empty_state(company, tmp_path):
+    """The demo search box needs a 'no matches' element (parity with the browse table)."""
+    generate_site([company], tmp_path)
+    index_html = (tmp_path / "index.html").read_text()
+    assert 'id="demo-empty"' in index_html

@@ -114,6 +114,7 @@
   </article>
   {% endfor %}
 </div>
+<p id="demo-empty" class="muted" style="display:none">No example companies match your search.</p>
 {% else %}
 <p class="muted">Example company data isn't available in this build yet.</p>
 {% endif %}
@@ -132,16 +133,17 @@
   </div>
   <div class="feature-card">
     <span class="tag-mirror">On this page</span>
-    <h3>Filing documents</h3>
-    <p>Ingested filing text per company, with excerpt previews and CSV/JSON download.</p>
-    {% if fc %}<a href="{{ fc.href }}#documents">See it on {{ fc.ticker|default:fc.name }} →</a>{% endif %}
+    <h3>Derived metrics &amp; KPIs</h3>
+    <p>Ratios and KPIs computed from the XBRL facts by a transparent, reviewable formula set —
+      never a black-box model.</p>
+    {% if fc %}<a href="{{ fc.href }}#metrics">See it on {{ fc.ticker|default:fc.name }} →</a>{% endif %}
   </div>
   <div class="feature-card">
     <span class="tag-mirror">On this page</span>
     <h3>Leadership &amp; stakeholder orientation</h3>
     <p>Officers, directors, and owners from SEC Forms 3/4/5, plus a transparent capital-allocation
       heuristic — not a rating of any person.</p>
-    {% if fc %}<a href="{{ fc.href }}#leadership">See it on {{ fc.ticker|default:fc.name }} →</a>{% endif %}
+    {% if fc %}<a href="{{ fc.href }}{% if fc.has_leadership %}#leadership{% endif %}">See it on {{ fc.ticker|default:fc.name }} →</a>{% endif %}
   </div>
   <div class="feature-card">
     <span class="tag-mirror">On this page</span>
@@ -253,29 +255,44 @@
 (function(){
   // Progressive enhancement: without JS every example card is shown stacked
   // (still fully functional); with JS, collapse to one card with pill-switching.
-  document.documentElement.classList.add('js');
   var pills=[].slice.call(document.querySelectorAll('#demo-pills .pill'));
+  if(!pills.length) return;
+  document.documentElement.classList.add('js');
   var cards=[].slice.call(document.querySelectorAll('#demo-cards .example-card'));
+  var demoEmpty=document.getElementById('demo-empty');
+  function activate(idx){
+    pills.forEach(function(x){ var on=x.getAttribute('data-idx')===idx; x.classList.toggle('active',on); x.setAttribute('aria-pressed', on?'true':'false'); });
+    cards.forEach(function(c){ c.classList.toggle('active', c.getAttribute('data-idx')===idx); });
+  }
   pills.forEach(function(p){
-    p.addEventListener('click', function(){
-      var idx=p.getAttribute('data-idx');
-      pills.forEach(function(x){ var on=x===p; x.classList.toggle('active',on); x.setAttribute('aria-pressed', on?'true':'false'); });
-      cards.forEach(function(c){ c.classList.toggle('active', c.getAttribute('data-idx')===idx); });
-    });
+    p.addEventListener('click', function(){ activate(p.getAttribute('data-idx')); });
   });
   var dq=document.getElementById('demo-q');
   if(dq){
     dq.addEventListener('input', function(){
-      var v=dq.value.trim().toLowerCase();
+      var v=dq.value.trim().toLowerCase(), firstVisible=null, activeVisible=false;
       pills.forEach(function(p){
         var hit = !v || p.getAttribute('data-search').indexOf(v)!==-1;
         p.style.display = hit ? '' : 'none';
+        if(hit){ if(!firstVisible) firstVisible=p; if(p.classList.contains('active')) activeVisible=true; }
       });
+      // Keep the shown card in sync with the visible pills: if the active pill
+      // got filtered out, jump to the first match; if nothing matches, show the
+      // empty-state and hide every card.
+      if(firstVisible){
+        if(demoEmpty) demoEmpty.style.display='none';
+        if(!activeVisible) activate(firstVisible.getAttribute('data-idx'));
+      } else {
+        cards.forEach(function(c){ c.classList.remove('active'); });
+        if(demoEmpty) demoEmpty.style.display='';
+      }
     });
   }
 })();
 (function(){
-  // Animate hero stat tiles up from 0 to their real, server-rendered value.
+  // Animate hero stat tiles up to their real, server-rendered value. Skipped for
+  // visitors who prefer reduced motion — the server-rendered number already shows.
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   var els=[].slice.call(document.querySelectorAll('.stat-tile .v[data-count]'));
   els.forEach(function(el){
     var target=parseInt(el.getAttribute('data-count'),10);
