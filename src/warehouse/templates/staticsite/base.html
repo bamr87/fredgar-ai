@@ -6,22 +6,44 @@
 <title>{% block title %}Fredgar AI — Company Financials{% endblock %}</title>
 <style>
   :root{
-    --bg:#ffffff; --ink:#1b1b1b; --muted:#666; --line:#e3e3e3; --accent:#0b5cad;
-    --infobg:#f6f8fa; --hover:#f2f7fc; --chip:#eef3f8;
+    --bg:#f7f8fa; --ink:#1b2230; --muted:#5d6675; --subtle:#8a93a3;
+    --line:#e2e5eb; --line-strong:#cdd2db; --accent:#4f46e5; --accent-hover:#4338ca;
+    --accent-soft:#eef0fe; --accent-text:#4338ca; --viz-2:#0ea5e9;
+    --positive:#1a7f52; --positive-soft:#e6f4ec; --negative:#c2382f; --negative-soft:#fbeae8;
+    --warning:#b7791f; --warning-soft:#fbf3e2;
+    --radius-sm:6px; --radius:10px;
+    --shadow-sm:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.04);
+    --shadow:0 4px 12px rgba(16,24,40,.08),0 2px 4px rgba(16,24,40,.04);
+    --infobg:#f1f3f6; --hover:#eef0fe; --chip:#f1f3f6; --surface:#ffffff;
+    --font-mono:ui-monospace,'SF Mono','JetBrains Mono',Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0e1117; --ink:#e6e9ef; --muted:#9aa4b4; --subtle:#6b7585;
+      --line:#272d38; --line-strong:#39414f; --accent:#7c7bf5; --accent-hover:#9290ff;
+      --accent-soft:#1e2138; --accent-text:#a8a6ff; --viz-2:#38bdf8;
+      --positive:#3dd68c; --positive-soft:#11261c; --negative:#f97066; --negative-soft:#2a1512;
+      --warning:#f5c451; --warning-soft:#2a2210;
+      --infobg:#1d222b; --hover:#1e2138; --chip:#1d222b; --surface:#171b22;
+      --shadow-sm:0 1px 2px rgba(0,0,0,.3); --shadow:0 4px 12px rgba(0,0,0,.4);
+    }
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);
     font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
-  a{color:var(--accent);text-decoration:none}
+  a{color:var(--accent-text);text-decoration:none}
   a:hover{text-decoration:underline}
   header.site{border-bottom:1px solid var(--line);padding:14px 20px;display:flex;
-    align-items:baseline;gap:14px;flex-wrap:wrap}
-  header.site .brand{font-weight:700;font-size:18px}
-  header.site .brand a{color:var(--ink)}
+    align-items:center;gap:14px;flex-wrap:wrap;background:var(--surface)}
+  header.site .brand-link{display:flex;align-items:center;gap:10px;color:var(--ink);font-weight:700;font-size:16px}
+  header.site .brand-link:hover{text-decoration:none}
+  .brand-mark{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;flex:none;
+    background:linear-gradient(135deg,var(--accent),var(--viz-2));color:#fff;font-weight:800;
+    font-size:14px;box-shadow:var(--shadow-sm)}
   header.site .tag{color:var(--muted);font-size:13px}
-  header.site .sitenav{margin-left:auto;display:flex;gap:14px;font-size:14px}
+  header.site .sitenav{margin-left:auto;display:flex;gap:16px;font-size:14px;align-items:center}
   main{max-width:1080px;margin:0 auto;padding:22px 20px 60px}
-  h1{font-size:28px;margin:.2em 0 .1em;font-weight:700;line-height:1.2}
+  h1{font-size:28px;margin:.2em 0 .1em;font-weight:700;line-height:1.2;letter-spacing:-.5px}
   h2{font-size:21px;margin:1.6em 0 .5em;padding-bottom:.2em;border-bottom:1px solid var(--line)}
   h3{font-size:16px;margin:1.2em 0 .4em}
   .muted{color:var(--muted)}
@@ -30,39 +52,47 @@
   table{border-collapse:collapse;width:100%;margin:.4em 0 1em;font-size:14px}
   th,td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
   th{background:var(--infobg);font-weight:600}
-  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--font-mono)}
   tbody tr:hover{background:var(--hover)}
   .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:.2em 0}
-  button.btn,a.btn{font:13px inherit;border:1px solid var(--line);background:#fff;color:var(--ink);
-    border-radius:6px;padding:4px 10px;cursor:pointer;text-decoration:none;display:inline-block}
+  button.btn,a.btn{font:13px inherit;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);
+    border-radius:var(--radius-sm);padding:6px 12px;cursor:pointer;text-decoration:none;display:inline-block}
   button.btn:hover,a.btn:hover{background:var(--chip);text-decoration:none}
+  button.btn-primary,a.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button.btn-primary:hover,a.btn-primary:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
   .chip{display:inline-block;background:var(--chip);border-radius:10px;padding:1px 8px;font-size:12px;margin:0 4px 4px 0}
   .infobox{float:right;width:300px;margin:0 0 16px 20px;border:1px solid var(--line);
-    border-radius:8px;background:var(--infobg);padding:14px;font-size:13.5px}
+    border-radius:var(--radius);background:var(--infobg);padding:14px;font-size:13.5px}
   .infobox h2{font-size:15px;border:0;margin:.2em 0 .6em;text-align:center}
   .infobox dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 10px}
   .infobox dt{color:var(--muted)} .infobox dd{margin:0;text-align:right;word-break:break-word}
-  .toc{border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:1em 0;
+  .toc{border:1px solid var(--line);border-radius:var(--radius);padding:10px 14px;margin:1em 0;
     background:var(--infobg);display:inline-block;min-width:240px}
   .toc strong{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
   .toc ol{margin:.4em 0 0;padding-left:20px}
   .downloads a{margin:0 10px 6px 0}
-  .search{width:100%;max-width:480px;padding:9px 12px;font-size:15px;border:1px solid var(--line);border-radius:8px}
+  .search{width:100%;max-width:480px;padding:9px 12px;font-size:15px;border:1px solid var(--line-strong);
+    border-radius:var(--radius-sm);background:var(--surface);color:var(--ink)}
   footer.site{border-top:1px solid var(--line);color:var(--muted);font-size:13px;
     max-width:1080px;margin:0 auto;padding:18px 20px 40px}
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
-  .card{border:1px solid var(--line);border-radius:8px;padding:10px 12px}
-  .card .k{color:var(--muted);font-size:12px} .card .v{font-size:19px;font-weight:600;font-variant-numeric:tabular-nums}
+  .card{border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;background:var(--surface)}
+  .card .k{color:var(--muted);font-size:12px} .card .v{font-size:19px;font-weight:600;font-variant-numeric:tabular-nums;font-family:var(--font-mono)}
   .card .p{color:var(--muted);font-size:12px}
   @media(max-width:720px){.infobox{float:none;width:auto;margin:0 0 16px}}
+  @media(max-width:640px){.tag.hide-narrow{display:none}}
 </style>
+{% block extra_style %}{% endblock %}
 </head>
 <body>
 <header class="site">
-  <span class="brand"><a href="{{ root }}index.html">📊 Fredgar AI</a></span>
-  <span class="tag">Open SEC financial data — copy &amp; download friendly</span>
+  <a href="{{ root }}index.html" class="brand-link">
+    <span class="brand-mark" aria-hidden="true">F</span>
+    <span>Fredgar AI</span>
+  </a>
+  <span class="tag hide-narrow">Open SEC financial data — copy &amp; download friendly</span>
   <nav class="sitenav">
-    <a href="{{ root }}index.html">Companies</a>
+    <a href="{{ root }}index.html#browse">Companies</a>
     <a href="{{ root }}about.html">About</a>
     {% if site.app_url %}<a href="{{ site.app_url }}/" target="_blank" rel="noreferrer">Live app ↗</a>{% endif %}
     {% if site.source_url %}<a href="{{ site.source_url }}" target="_blank" rel="noreferrer">Source ↗</a>{% endif %}
