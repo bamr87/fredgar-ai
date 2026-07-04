@@ -1,23 +1,26 @@
 name: Publish static site
 
 # Builds the public, read-only static mirror ("Wikipedia of company financials")
-# and deploys it to GitHub Pages. The build syncs a curated set of companies
-# from SEC EDGAR (rate-limited, cached DB-first), computes metrics, and renders
-# plain HTML with `manage.py publish_static_site`.
+# and deploys it to GitHub Pages. The build is OFFLINE by default: it downloads
+# the serverless dataset (a compressed SQLite warehouse attached to the rolling
+# "dataset" GitHub Release, maintained by refresh-data.yml) and renders plain
+# HTML from it with `manage.py publish_static_site --skip-sync` — no SEC/FRED
+# calls. If the dataset release doesn't exist yet, it falls back to a live SEC
+# sync (bootstrap); run the "Refresh warehouse dataset" workflow once to create
+# the dataset and make publishes permanently offline.
 #
 # Repository configuration:
 #   - Settings -> Pages -> Source: "GitHub Actions".
-#   - Set USER_AGENT_EMAIL (repo variable or secret) — SEC requires a contact
-#     email in the User-Agent; the build fails fast without it.
+#   - USER_AGENT_EMAIL (repo variable or secret): required only for the live
+#     fallback / refresh-data.yml — SEC requires a contact email in the User-Agent.
 #   - Optional STATIC_SITE_APP_URL repo variable: public URL of the interactive
 #     app, shown as a "Live app" cross-link on every page.
-#   - Optional FRED_API_KEY secret (free from https://fred.stlouisfed.org/docs/api/api_key.html):
-#     enables the macro (FRED time-series) section. Without it the build still
-#     succeeds — the macro pages are simply omitted.
+#   - Optional FRED_API_KEY secret (used by refresh-data.yml, not here):
+#     enables the macro (FRED time-series) section in the dataset.
 
 on:
   schedule:
-    - cron: "17 11 * * 1" # weekly refresh (Mondays 11:17 UTC), off SEC's peak hours
+    - cron: "17 11 * * 1" # weekly re-render (refresh-data.yml refreshes an hour earlier)
   workflow_dispatch:
     inputs:
       tickers:
@@ -31,7 +34,7 @@ on:
   # deployment always lands last and the mirror self-heals within minutes.
   # (The real fix is Settings -> Pages -> Source: "GitHub Actions", which
   # disables the Jekyll pipeline entirely; this trigger stays correct either
-  # way and keeps the published data fresh on every merge.)
+  # way and keeps the published site current on every merge.)
   push:
     branches: [main, master]
 
@@ -45,6 +48,10 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+env:
+  DATASET_TAG: dataset
+  DATASET_ASSET: fredgar-warehouse.sqlite3.zst
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -52,8 +59,8 @@ jobs:
     env:
       USER_AGENT_EMAIL: ${{ vars.USER_AGENT_EMAIL || secrets.USER_AGENT_EMAIL }}
       STATIC_SITE_APP_URL: ${{ vars.STATIC_SITE_APP_URL }}
-      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
       TICKERS: ${{ inputs.tickers }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -63,7 +70,24 @@ jobs:
           cache-dependency-path: requirements.txt
       - run: pip install -r requirements.txt
 
-      - name: Require SEC contact email
+      - name: Download dataset (serverless warehouse DB)
+        id: dataset
+        run: |
+          mkdir -p /tmp/dataset
+          if gh release download "$DATASET_TAG" --pattern "$DATASET_ASSET" \
+               --dir /tmp/dataset --repo "$GITHUB_REPOSITORY" 2>/dev/null; then
+            zstd -d -f "/tmp/dataset/$DATASET_ASSET" -o src/db.sqlite3
+            echo "mode=offline" >> "$GITHUB_OUTPUT"
+            echo "Rendering offline from the dataset release ($(du -h src/db.sqlite3 | cut -f1))."
+          else
+            echo "mode=live" >> "$GITHUB_OUTPUT"
+            echo "::notice::No dataset release found — falling back to a live SEC sync." \
+                 "Run the 'Refresh warehouse dataset' workflow once to create the dataset" \
+                 "and make publishes offline."
+          fi
+
+      - name: Require SEC contact email (live fallback only)
+        if: steps.dataset.outputs.mode == 'live'
         run: |
           if [ -z "$USER_AGENT_EMAIL" ]; then
             echo "::error::USER_AGENT_EMAIL is not set. SEC requires a contact email in the" \
@@ -71,12 +95,18 @@ jobs:
             exit 1
           fi
 
-      - name: Build static site from SEC EDGAR
+      - name: Render static site
         working-directory: src
         run: |
           BASE_URL="https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}"
           ARGS=(--output "$GITHUB_WORKSPACE/_site" --base-url "$BASE_URL")
-          if [ -n "$TICKERS" ]; then ARGS+=(--tickers "$TICKERS"); fi
+          if [ -n "$TICKERS" ]; then
+            ARGS+=(--tickers "$TICKERS")
+            if [ "${{ steps.dataset.outputs.mode }}" = "offline" ]; then ARGS+=(--skip-sync); fi
+          elif [ "${{ steps.dataset.outputs.mode }}" = "offline" ]; then
+            # The dataset defines the site: render everything it contains.
+            ARGS+=(--all-warehouse)
+          fi
           python manage.py migrate --noinput
           python manage.py publish_static_site "${ARGS[@]}"
 

@@ -103,10 +103,11 @@ def sync_macro_for_site(*, delay: float = 0.5, days_back: int = 365 * 20) -> boo
 
 
 def publish_site(
-    tickers: Iterable[str],
+    tickers: Iterable[str] | None,
     output_dir: str | Path,
     *,
     sync: bool = True,
+    render: bool = True,
     delay: float = 0.4,
     user_agent_email: str | None = None,
     leadership_limit: int = 10,
@@ -118,6 +119,11 @@ def publish_site(
 ) -> dict[str, Any]:
     """Sync ``tickers`` (unless ``sync=False``) and render the static site.
 
+    ``render=False`` runs the sync only (the dataset-refresh path: warehouse the
+    data, upload the DB elsewhere, render later from it with ``sync=False``).
+    ``tickers=None`` renders every company already in the warehouse — the
+    offline path where the dataset, not a ticker list, defines the site; it
+    requires ``sync=False`` (there is no cohort to sync).
     ``macro=True`` additionally syncs the FRED series bundles when a
     ``FRED_API_KEY`` is available (skipped otherwise); the macro section renders
     from whatever series data ends up warehoused. Returns the ``generate_site``
@@ -127,6 +133,12 @@ def publish_site(
     companies: list[Company] = []
     seen_pks: set[int] = set()
     errors: dict[str, str] = {}
+
+    if tickers is None:
+        if sync:
+            raise ValueError("tickers=None (all-warehouse) requires sync=False")
+        companies = list(Company.objects.order_by("name"))
+        tickers = []
 
     for raw in tickers:
         ticker = raw.strip().upper()
@@ -160,8 +172,12 @@ def publish_site(
 
     macro_synced = sync_macro_for_site(delay=delay) if (macro and sync) else False
 
-    summary = generate_site(
-        companies, output_dir, base_url=base_url, app_url=app_url, source_url=source_url
+    summary: dict[str, Any] = (
+        generate_site(
+            companies, output_dir, base_url=base_url, app_url=app_url, source_url=source_url
+        )
+        if render
+        else {}
     )
     summary["companies"] = len(companies)
     summary["errors"] = errors

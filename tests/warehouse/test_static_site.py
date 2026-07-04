@@ -235,6 +235,51 @@ def test_publish_static_site_command_fails_when_nothing_publishable(tmp_path):
 
 
 @pytest.mark.django_db
+def test_publish_site_sync_only_skips_rendering(company, tmp_path, monkeypatch):
+    """render=False warehouses data without writing any site files (dataset refresh)."""
+    from warehouse.services import static_site_publish
+
+    monkeypatch.setattr(static_site_publish, "sync_company_for_site", lambda t, **kw: company)
+    summary = static_site_publish.publish_site(["AAPL"], tmp_path, render=False, delay=0)
+    assert summary["companies"] == 1
+    assert "pages" not in summary  # generate_site never ran
+    assert not (tmp_path / "index.html").exists()
+
+
+@pytest.mark.django_db
+def test_publish_site_all_warehouse_renders_every_company(company, thin_company, tmp_path):
+    """tickers=None + sync=False renders the whole warehouse — the dataset defines the site."""
+    from warehouse.services.static_site_publish import publish_site
+
+    summary = publish_site(None, tmp_path, sync=False)
+    assert summary["companies"] == 2
+    assert (tmp_path / "companies" / company.cik / "index.html").exists()
+    assert (tmp_path / "companies" / thin_company.cik / "index.html").exists()
+
+    with pytest.raises(ValueError):
+        publish_site(None, tmp_path, sync=True)
+
+
+@pytest.mark.django_db
+def test_publish_static_site_command_flag_conflicts(tmp_path):
+    from django.core.management.base import CommandError
+
+    with pytest.raises(CommandError):
+        call_command("publish_static_site", "--skip-sync", "--sync-only", "--output", str(tmp_path))
+    with pytest.raises(CommandError):
+        call_command(
+            "publish_static_site", "--all-warehouse", "--sync-only", "--output", str(tmp_path)
+        )
+
+
+@pytest.mark.django_db
+def test_publish_static_site_command_all_warehouse(company, tmp_path):
+    call_command("publish_static_site", "--all-warehouse", "--output", str(tmp_path))
+    assert (tmp_path / "companies" / company.cik / "index.html").exists()
+    assert (tmp_path / "index.html").exists()
+
+
+@pytest.mark.django_db
 def test_publish_site_tolerates_per_ticker_sync_failures(company, tmp_path, monkeypatch):
     """One ticker failing to sync must not abort the publish of the others."""
     from warehouse.services import static_site_publish

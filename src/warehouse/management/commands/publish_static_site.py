@@ -33,6 +33,18 @@ class Command(BaseCommand):
             help="Render from warehouse data only — no SEC network calls.",
         )
         parser.add_argument(
+            "--sync-only",
+            action="store_true",
+            help="Sync the warehouse (SEC + FRED) without rendering — the "
+            "dataset-refresh path; render later with --skip-sync.",
+        )
+        parser.add_argument(
+            "--all-warehouse",
+            action="store_true",
+            help="Render every company already in the warehouse instead of a "
+            "ticker list (implies --skip-sync; the dataset defines the site).",
+        )
+        parser.add_argument(
             "--delay", type=float, default=0.4, help="Seconds between companies during sync."
         )
         parser.add_argument(
@@ -70,8 +82,14 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        tickers = [t for t in options["tickers"].split(",") if t.strip()]
-        if not tickers:
+        if options["skip_sync"] and options["sync_only"]:
+            raise CommandError("--skip-sync and --sync-only are mutually exclusive.")
+        if options["all_warehouse"] and options["sync_only"]:
+            raise CommandError("--all-warehouse and --sync-only are mutually exclusive.")
+        tickers: list[str] | None = [t for t in options["tickers"].split(",") if t.strip()]
+        if options["all_warehouse"]:
+            tickers = None
+        elif not tickers:
             raise CommandError("Provide at least one ticker via --tickers.")
         output = options.get("output") or str(Path(settings.BASE_DIR).parent / "site")
 
@@ -79,7 +97,8 @@ class Command(BaseCommand):
             summary = publish_site(
                 tickers,
                 output,
-                sync=not options["skip_sync"],
+                sync=not (options["skip_sync"] or options["all_warehouse"]),
+                render=not options["sync_only"],
                 delay=options["delay"],
                 user_agent_email=options.get("user_agent_email"),
                 leadership_limit=options["leadership_limit"],
@@ -93,6 +112,15 @@ class Command(BaseCommand):
 
         for ticker, msg in summary["errors"].items():
             self.stdout.write(self.style.WARNING(f"skipped {ticker}: {msg}"))
+        if options["sync_only"]:
+            macro_note = "with" if summary["macro_synced"] else "without"
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Warehoused {summary['companies']} compan(y/ies) {macro_note} a FRED "
+                    "macro sync (no rendering — publish later with --skip-sync)."
+                )
+            )
+            return
         macro_note = (
             f", {summary['macro_series']} macro series in {summary['macro_bundles']} bundle(s)"
             if summary.get("macro_bundles")
