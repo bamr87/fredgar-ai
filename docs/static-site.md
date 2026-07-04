@@ -78,29 +78,64 @@ python manage.py publish_static_site --tickers AAPL,MSFT,NVDA \
 
 # Offline re-render from already-warehoused data (no SEC calls):
 python manage.py publish_static_site --skip-sync --output ../site
+
+# Render EVERYTHING in the warehouse, offline (the dataset defines the site):
+python manage.py publish_static_site --all-warehouse --output ../site
+
+# Sync the warehouse without rendering (the dataset-refresh path):
+python manage.py publish_static_site --sync-only --force-refresh
 ```
 
 `generate_static_site` still exists for rendering arbitrary warehouse companies
 (`--ticker/--cik/--all`) without any syncing.
 
+## The serverless dataset (no re-downloading from EDGAR/FRED)
+
+The extracted data lives in **one compressed SQLite file** —
+`fredgar-warehouse.sqlite3.zst`, attached to the rolling **`dataset` GitHub Release**. That
+file *is* the warehouse: companies, filings, XBRL facts, derived metrics, leadership, the raw
+SEC JSON payload cache (`EdgarSecPayload`), and FRED series observations.
+
+Two workflows with strictly separated responsibilities:
+
+- **[`refresh-data.yml`](../.github/workflows/refresh-data.yml)** — the *only* thing that
+  talks to SEC EDGAR or FRED. Weekly cron + manual dispatch (optional `tickers` input to
+  refresh or **add** companies). It downloads the current dataset, runs
+  `publish_static_site --sync-only --force-refresh` (force-refresh matters: the DB-first
+  payload cache would otherwise serve stale SEC JSON forever from a persistent DB), then
+  re-uploads the compressed DB to the release and dispatches a publish. The first run
+  bootstraps the dataset from an empty warehouse.
+- **[`pages.yml`](../.github/workflows/pages.yml)** — render + deploy only. Downloads the
+  dataset asset and runs `publish_static_site --skip-sync` / `--all-warehouse` — zero
+  network calls to EDGAR/FRED, fast, deterministic, immune to upstream outages and rate
+  limits. If the dataset release doesn't exist yet it falls back to a live SEC sync
+  (bootstrap) and tells you to run the refresh workflow.
+
+The published site itself remains the presentation-layer dataset (per-company
+`company.json`/`facts.csv`, site-wide `companies.json`, per-bundle `observations.csv` /
+`bundle.json`) — the release asset is the *build input*, not the display format.
+
 ## GitHub Pages deployment
 
 [`.github/workflows/pages.yml`](../.github/workflows/pages.yml) builds and deploys on:
 
-- a **weekly schedule** (Mondays 11:17 UTC — keeps the mirror fresh),
-- **manual dispatch** (optional `tickers` input to publish a custom cohort),
-- **pushes to `main`** that touch the static-site code, templates, or the workflow.
+- a **weekly schedule** (Mondays 11:17 UTC, an hour after the dataset refresh),
+- **manual dispatch** (optional `tickers` input to publish a subset),
+- **every push to `main`** (self-heals if anything else deploys over the site).
 
 One-time repository setup:
 
 1. **Settings → Pages → Build and deployment → Source: "GitHub Actions".**
 2. Add a `USER_AGENT_EMAIL` repository **variable or secret** — SEC requires a contact
-   email in the `User-Agent`; the workflow fails fast without it.
-3. Optional: a `STATIC_SITE_APP_URL` repository variable with the public URL of the
+   email in the `User-Agent`; the refresh workflow (and the publish's bootstrap fallback)
+   fails fast without it.
+3. Run the **"Refresh warehouse dataset"** workflow once — the one-time load that creates
+   the `dataset` release. All publishes are offline from then on.
+4. Optional: a `STATIC_SITE_APP_URL` repository variable with the public URL of the
    interactive app; every static page then shows a "Live app ↗" cross-link.
-4. Optional: a `FRED_API_KEY` repository **secret**
-   ([free key](https://fred.stlouisfed.org/docs/api/api_key.html)) to publish the macro
-   section. Without it the build still succeeds — macro pages are simply omitted.
+5. Optional: a `FRED_API_KEY` repository **secret**
+   ([free key](https://fred.stlouisfed.org/docs/api/api_key.html)) so the refresh workflow
+   also syncs the macro section. Without it the site simply omits the macro pages.
 
 The published URL is `https://<owner>.github.io/<repo>/` (the workflow derives it
 automatically for the sitemap). All intra-site links are relative, so the site works at any
