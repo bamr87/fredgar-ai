@@ -1,0 +1,83 @@
+{% extends "staticsite/base.html" %}
+{% block title %}{{ bundle.name }} — Macro series (FRED) — Fredgar AI{% endblock %}
+
+{% block extra_style %}
+<style>
+  .series-card{margin-bottom:14px;padding:14px 16px}
+  .series-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .series-head h3{margin:0;font-size:16px}
+  .series-id{font-family:var(--font-mono);font-size:12.5px;color:var(--subtle)}
+  .series-note{color:var(--muted);font-size:13.5px;margin:.4em 0 .6em}
+  .series-body{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}
+  .series-stats .v{font-size:22px;font-weight:700;font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+  .series-stats .k{color:var(--muted);font-size:12px}
+  .deltas{display:flex;gap:16px;margin-top:.5em;font-size:12.5px;color:var(--muted)}
+  .deltas b{font-family:var(--font-mono);font-weight:600;color:var(--ink)}
+  .spark{color:var(--accent)}
+  details.obs{margin-top:.6em;font-size:13px}
+  details.obs summary{cursor:pointer;color:var(--accent-text)}
+  details.obs table{max-width:360px;margin-top:.5em}
+</style>
+{% endblock %}
+
+{% block content %}
+<p class="small"><a href="../index.html">← All macro bundles</a></p>
+<h1>{{ bundle.name }}</h1>
+<p class="sub">{{ bundle.description }}</p>
+
+<p class="downloads">
+  <a class="btn" href="observations.csv" download>All observations (CSV)</a>
+  <a class="btn" href="bundle.json" download>Bundle data (JSON)</a>
+</p>
+
+{% for s in bundle.series %}
+<div class="card series-card">
+  <div class="series-head">
+    <h3>{{ s.title }}</h3>
+    <span class="series-id"><a href="{{ s.fred_url }}" target="_blank" rel="noreferrer">{{ s.id }} ↗</a></span>
+    {% if s.frequency %}<span class="chip">{{ s.frequency }}</span>{% endif %}
+  </div>
+  {% if s.note %}<p class="series-note">{{ s.note }}</p>{% endif %}
+  <div class="series-body">
+    <div class="series-stats">
+      <div class="v">{{ s.latest.display }}</div>
+      <div class="k">{{ s.units|default:"value" }} · {{ s.latest.date }}</div>
+      <div class="deltas">
+        {% if s.delta_1m %}<span>1M <b>{{ s.delta_1m.display }}</b></span>{% endif %}
+        {% if s.delta_1y %}<span>1Y <b>{{ s.delta_1y.display }}</b></span>{% endif %}
+      </div>
+    </div>
+    {% if s.spark_points %}
+    <svg class="spark" width="240" height="48" viewBox="0 0 240 48" role="img"
+         aria-label="Trend of {{ s.title }} over the recent window">
+      <polyline points="{{ s.spark_points }}" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    </svg>
+    {% endif %}
+  </div>
+  {% if s.industries %}
+  <div style="margin-top:.5em">{% for i in s.industries %}<span class="chip">{{ i }}</span>{% endfor %}</div>
+  {% endif %}
+  {% if s.table %}
+  <details class="obs">
+    <summary>Recent observations ({{ s.observation_count }} stored)</summary>
+    <div class="toolbar">
+      <button class="btn" data-copy-for="obs-{{ s.id }}" onclick="copyTable('obs-{{ s.id }}')">⧉ Copy</button>
+    </div>
+    <table id="obs-{{ s.id }}">
+      <thead><tr><th>Date</th><th class="num">Value</th></tr></thead>
+      <tbody>
+        {% for o in s.table %}
+        <tr><td>{{ o.date }}</td><td class="num" data-copy="{{ o.value }}">{{ o.display }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </details>
+  {% endif %}
+</div>
+{% endfor %}
+
+<p class="small muted" style="margin-top:2em">This product uses the FRED® API but is not endorsed
+  or certified by the Federal Reserve Bank of St. Louis. Sparklines cover roughly the last five
+  years; the CSV download carries the full synced history. Verify figures at the linked FRED
+  series pages.</p>
+{% endblock %}

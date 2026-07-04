@@ -1,0 +1,24 @@
+{% extends "staticsite/base.html" %}
+{% block title %}Fredgar AI — Macro series (FRED){% endblock %}
+{% block content %}
+<h1>Macro series</h1>
+<p class="sub">{{ bundles|length }} theme bundle{{ bundles|length|pluralize }} of macroeconomic time
+  series from <a href="https://fred.stlouisfed.org/" target="_blank" rel="noreferrer">FRED</a>
+  (Federal Reserve Bank of St. Louis) — each series with its latest value, recent trend, and a
+  note on which industries it moves. Snapshot as of the build date; full history downloadable
+  per bundle as CSV/JSON.</p>
+
+<div class="grid">
+  {% for b in bundles %}
+  <a class="card" href="{{ b.slug }}/index.html" style="text-decoration:none">
+    <div style="font-size:16px;font-weight:700;color:var(--ink)">{{ b.name }}</div>
+    <div class="k" style="margin:.3em 0">{{ b.description }}</div>
+    <div class="p">{{ b.series|length }} series</div>
+  </a>
+  {% endfor %}
+</div>
+
+<p class="small muted" style="margin-top:2em">This product uses the FRED® API but is not endorsed
+  or certified by the Federal Reserve Bank of St. Louis. Each series links back to its FRED page —
+  verify figures at the source.</p>
+{% endblock %}

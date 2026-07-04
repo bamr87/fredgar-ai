@@ -62,6 +62,12 @@ class Command(BaseCommand):
             default=None,
             help="SEC contact email override (default: USER_AGENT_EMAIL / settings).",
         )
+        parser.add_argument(
+            "--skip-macro",
+            action="store_true",
+            help="Skip the FRED bundle sync (macro pages still render if series "
+            "data is already warehoused; without data the section is omitted).",
+        )
 
     def handle(self, *args, **options):
         tickers = [t for t in options["tickers"].split(",") if t.strip()]
@@ -78,6 +84,7 @@ class Command(BaseCommand):
                 user_agent_email=options.get("user_agent_email"),
                 leadership_limit=options["leadership_limit"],
                 force_refresh=options["force_refresh"],
+                macro=not options["skip_macro"],
                 base_url=options.get("base_url"),
                 app_url=options.get("app_url"),
             )
@@ -86,9 +93,15 @@ class Command(BaseCommand):
 
         for ticker, msg in summary["errors"].items():
             self.stdout.write(self.style.WARNING(f"skipped {ticker}: {msg}"))
+        macro_note = (
+            f", {summary['macro_series']} macro series in {summary['macro_bundles']} bundle(s)"
+            if summary.get("macro_bundles")
+            else ", no macro data (set FRED_API_KEY to publish FRED series)"
+        )
         self.stdout.write(
             self.style.SUCCESS(
                 f"Published {summary['pages']} page(s) for {summary['companies']} "
-                f"compan(y/ies) -> {summary['output_dir']} (as of {summary['generated_at']})"
+                f"compan(y/ies){macro_note} -> {summary['output_dir']} "
+                f"(as of {summary['generated_at']})"
             )
         )
