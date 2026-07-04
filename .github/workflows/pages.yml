@@ -24,15 +24,16 @@ on:
         description: "Comma-separated tickers to publish (empty = default cohort)"
         required: false
         default: ""
+  # Publish on EVERY push to the default branch (no paths filter, deliberately):
+  # while the repo's Pages source is "Deploy from a branch", GitHub's built-in
+  # Jekyll pipeline also deploys on every push and can replace this site with a
+  # Jekyll rendering of the repo. Running our publish on every push means our
+  # deployment always lands last and the mirror self-heals within minutes.
+  # (The real fix is Settings -> Pages -> Source: "GitHub Actions", which
+  # disables the Jekyll pipeline entirely; this trigger stays correct either
+  # way and keeps the published data fresh on every merge.)
   push:
     branches: [main, master]
-    paths:
-      - ".github/workflows/pages.yml"
-      - "src/warehouse/services/static_site*.py"
-      - "src/warehouse/templates/staticsite/**"
-      - "src/warehouse/management/commands/publish_static_site.py"
-      - "src/public_data/services/static_export.py"
-      - "src/public_data/bundles/**"
 
 permissions:
   contents: read
