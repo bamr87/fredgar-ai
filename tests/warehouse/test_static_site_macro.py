@@ -67,6 +67,10 @@ def test_fmt_obs_value():
     assert fmt_obs_value(decimal.Decimal("4.20")) == "4.2"
     assert fmt_obs_value(decimal.Decimal("15511.00")) == "15,511"
     assert fmt_obs_value(None) == "—"
+    # Stays exact beyond float precision (the DB column allows 24 digits).
+    assert (
+        fmt_obs_value(decimal.Decimal("123456789012345678.111111")) == "123,456,789,012,345,678.11"
+    )
 
 
 @pytest.mark.django_db
@@ -138,11 +142,23 @@ def test_generate_site_omits_macro_section_without_data(company, tmp_path):
 
 @pytest.mark.django_db
 def test_publish_site_skips_macro_sync_without_api_key(company, tmp_path, monkeypatch):
-    """No FRED_API_KEY -> macro sync silently skipped, publish still succeeds."""
+    """No FRED_API_KEY -> macro sync silently skipped, publish still succeeds.
+
+    Runs with sync=True (stubbing the SEC company sync) so the key-gated branch
+    of sync_macro_for_site actually executes; call_command is trapped to prove
+    no FRED refresh is ever attempted.
+    """
     from warehouse.services import static_site_publish
 
     monkeypatch.delenv("FRED_API_KEY", raising=False)
-    summary = static_site_publish.publish_site(["AAPL"], tmp_path, sync=False)
+    monkeypatch.setattr(static_site_publish, "sync_company_for_site", lambda t, **kw: company)
+    import django.core.management as mgmt
+
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("refresh_series_bundles must not run without FRED_API_KEY")
+
+    monkeypatch.setattr(mgmt, "call_command", fail_if_called)
+    summary = static_site_publish.publish_site(["AAPL"], tmp_path, delay=0)
     assert summary["macro_synced"] is False
     assert (tmp_path / "index.html").exists()
 

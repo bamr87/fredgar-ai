@@ -9,7 +9,7 @@ mirror needs no backend and never fetches at view time.
 from __future__ import annotations
 
 import datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from public_data.models import SeriesBundle, SeriesObservation
@@ -29,12 +29,16 @@ def macro_data_available() -> bool:
 
 
 def fmt_obs_value(value: Any) -> str:
-    """Format an observation value: grouped, up to 2 decimals, trailing zeros trimmed."""
+    """Format an observation value: grouped, up to 2 decimals, trailing zeros trimmed.
+
+    Stays in ``Decimal`` end-to-end — the DB column allows 24 digits, beyond
+    float's precision.
+    """
     if value is None:
         return "—"
     try:
-        v = float(value)
-    except (TypeError, ValueError):
+        v = value if isinstance(value, Decimal) else Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError):
         return str(value)
     text = f"{v:,.2f}"
     if "." in text:
@@ -46,8 +50,9 @@ def _delta(latest: Decimal, past: Decimal | None) -> dict[str, Any] | None:
     if past is None:
         return None
     diff = latest - past
+    # Raw value as a string: exact, and consistent with latest.value in bundle.json.
     return {
-        "value": float(diff),
+        "value": str(diff),
         "display": ("+" if diff > 0 else "") + fmt_obs_value(diff),
         "direction": "up" if diff > 0 else ("down" if diff < 0 else "flat"),
     }
