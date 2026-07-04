@@ -43,7 +43,7 @@ preferred by whether they have any of the three demo-shown concepts (Revenue, Ne
 Total Assets) and then by richest data (`counts.facts`), capped at `FEATURED_LIMIT` (8). Their
 identity, headline figures, and fact/filing counts are rendered as ordinary server-side HTML
 (`.example-card` elements) — visible and fully readable with JavaScript disabled. A small
-vanilla-JS enhancement (`{% block script %}` in `index.html`) adds a `.js` class to `<html>`,
+vanilla-JS enhancement (the `block script` template block in `index.html`) adds a `.js` class to `<html>`,
 which is what actually collapses the cards to one-at-a-time with pill-switching and enables the
 search-filter box; without JS, every example simply renders stacked. Company data with no
 matching headline concept still appears in the demo with a graceful fallback message instead of
