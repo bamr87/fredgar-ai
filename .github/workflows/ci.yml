@@ -130,8 +130,11 @@ jobs:
           cache-dependency-path: requirements.txt
       - run: pip install -r requirements.txt
       - name: Markdown is Liquid-safe (no raw {% ... %} tags)
+        # -e PATTERN -- keeps the pattern/option split unambiguous on any grep
+        # (with plain 'PATTERN --', POSIX-mode grep reads -- as a filename and
+        # the check silently passes).
         run: |
-          if git ls-files '*.md' | xargs -r grep -nE '\{%' --; then
+          if git ls-files '*.md' | xargs -r grep -nE -e '\{%' --; then
             echo "::error::Raw Liquid tags in Markdown break GitHub's branch-mode Jekyll" \
                  "build — spell template tags without braces in docs."
             exit 1
