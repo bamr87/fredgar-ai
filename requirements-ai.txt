@@ -4,4 +4,4 @@
 #   pip install -r requirements-ai.txt
 # Auth (set only ONE — both 401): a Claude Code OAuth token (CLAUDE_CODE_OAUTH_TOKEN, from
 # `claude setup-token`, preferred) or ANTHROPIC_API_KEY. See docs/leadership-methodology.md.
-anthropic>=0.40
+anthropic>=0.116.0
