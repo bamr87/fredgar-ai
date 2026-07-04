@@ -90,6 +90,7 @@
   <span class="tag hide-narrow">Open SEC financial data — copy &amp; download friendly</span>
   <nav class="sitenav">
     <a href="{{ root }}index.html#browse">Companies</a>
+    {% if has_macro %}<a href="{{ root }}macro/index.html">Macro</a>{% endif %}
     <a href="{{ root }}about.html">About</a>
     {% if site.app_url %}<a href="{{ site.app_url }}/" target="_blank" rel="noreferrer">Live app ↗</a>{% endif %}
     {% if site.source_url %}<a href="{{ site.source_url }}" target="_blank" rel="noreferrer">Source ↗</a>{% endif %}
@@ -100,7 +101,10 @@
 </main>
 <footer class="site">
   Data sourced from <a href="https://www.sec.gov/edgar" target="_blank" rel="noreferrer">SEC EDGAR</a>
-  (public XBRL facts and filings). Informational use only — verify material figures against the
+  (public XBRL facts and filings){% if has_macro %} and
+  <a href="https://fred.stlouisfed.org/" target="_blank" rel="noreferrer">FRED®</a>
+  (macro series; not endorsed or certified by the Federal Reserve Bank of St. Louis){% endif %}.
+  Informational use only — verify material figures against the
   original filings. Generated {{ generated_at }} · <a href="{{ root }}about.html">About this site</a>{% if site.app_url %}
   · <a href="{{ site.app_url }}/" target="_blank" rel="noreferrer">Interactive app</a>{% endif %}.
 </footer>

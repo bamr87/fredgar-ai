@@ -470,6 +470,55 @@ def _build_landing_context(
     }
 
 
+def _write_macro_section(out: Path, site: dict[str, str], stamp: str) -> dict[str, Any]:
+    """Render the FRED macro section (``macro/``) from already-warehoused series data.
+
+    Returns ``{"has_macro": bool, "hrefs": [...], "bundle_count": n, "series_count": n}``.
+    Skipped entirely (no files, no nav link) when nothing has been synced — the
+    mirror never publishes empty shell pages.
+    """
+    from public_data.services.static_export import build_macro_context, iter_bundle_observations
+
+    bundles = build_macro_context()
+    if not bundles:
+        return {"has_macro": False, "hrefs": [], "bundle_count": 0, "series_count": 0}
+
+    macro_ctx = {"generated_at": stamp, "site": site, "root": "../", "has_macro": True}
+    (out / "macro").mkdir(parents=True, exist_ok=True)
+    (out / "macro" / "index.html").write_text(
+        render_to_string("staticsite/macro.html", {"bundles": bundles, **macro_ctx}),
+        encoding="utf-8",
+    )
+    hrefs = ["macro/index.html"]
+    series_count = 0
+    for bundle in bundles:
+        bdir = out / "macro" / bundle["slug"]
+        bdir.mkdir(parents=True, exist_ok=True)
+        (bdir / "index.html").write_text(
+            render_to_string(
+                "staticsite/macro_bundle.html", {"bundle": bundle, **macro_ctx, "root": "../../"}
+            ),
+            encoding="utf-8",
+        )
+        (bdir / "bundle.json").write_text(
+            json.dumps(bundle, indent=2, default=str), encoding="utf-8"
+        )
+        buf = io.StringIO()
+        w = csv.writer(buf)
+        w.writerow(["series_id", "date", "value"])
+        for row in iter_bundle_observations(bundle["slug"]):
+            w.writerow(row)
+        (bdir / "observations.csv").write_text(buf.getvalue(), encoding="utf-8")
+        hrefs.append(f"macro/{bundle['slug']}/index.html")
+        series_count += len(bundle["series"])
+    return {
+        "has_macro": True,
+        "hrefs": hrefs,
+        "bundle_count": len(bundles),
+        "series_count": series_count,
+    }
+
+
 def generate_site(
     companies: Iterable[Company],
     output_dir: str | Path,
@@ -489,6 +538,7 @@ def generate_site(
     (out / "companies").mkdir(parents=True, exist_ok=True)
     stamp = (generated_at or datetime.datetime.now(datetime.timezone.utc)).date().isoformat()
     site = _site_links(base_url, app_url, source_url)
+    macro = _write_macro_section(out, site, stamp)
 
     index_rows: list[dict[str, Any]] = []
     featured_candidates: list[dict[str, Any]] = []
@@ -498,6 +548,7 @@ def generate_site(
         ctx["generated_at"] = stamp
         ctx["site"] = site
         ctx["root"] = "../../"
+        ctx["has_macro"] = macro["has_macro"]
         cdir = out / "companies" / company.cik
         cdir.mkdir(parents=True, exist_ok=True)
         (cdir / "index.html").write_text(
@@ -522,7 +573,14 @@ def generate_site(
         pages += 1
 
     index_rows.sort(key=lambda r: r["name"].lower())
-    base_ctx = {"generated_at": stamp, "site": site, "root": ""}
+    base_ctx = {
+        "generated_at": stamp,
+        "site": site,
+        "root": "",
+        "has_macro": macro["has_macro"],
+        "macro_bundle_count": macro["bundle_count"],
+        "macro_series_count": macro["series_count"],
+    }
     landing_ctx = _build_landing_context(index_rows, featured_candidates)
     (out / "index.html").write_text(
         render_to_string(
@@ -547,17 +605,30 @@ def generate_site(
     # GitHub Pages: serve files verbatim (no Jekyll pass over the output).
     (out / ".nojekyll").write_text("", encoding="utf-8")
     if site["base_url"]:
-        _write_seo_files(out, site["base_url"], index_rows, stamp)
-    return {"pages": pages, "output_dir": str(out), "generated_at": stamp}
+        _write_seo_files(out, site["base_url"], index_rows, stamp, extra_hrefs=macro["hrefs"])
+    return {
+        "pages": pages,
+        "output_dir": str(out),
+        "generated_at": stamp,
+        "macro_bundles": macro["bundle_count"],
+        "macro_series": macro["series_count"],
+    }
 
 
 def _write_seo_files(
-    out: Path, base_url: str, index_rows: list[dict[str, Any]], stamp: str
+    out: Path,
+    base_url: str,
+    index_rows: list[dict[str, Any]],
+    stamp: str,
+    *,
+    extra_hrefs: list[str] | None = None,
 ) -> None:
     """sitemap.xml + robots.txt so the published mirror is crawlable."""
-    urls = [f"{base_url}/index.html", f"{base_url}/about.html"] + [
-        f"{base_url}/{r['href']}" for r in index_rows
-    ]
+    urls = (
+        [f"{base_url}/index.html", f"{base_url}/about.html"]
+        + [f"{base_url}/{h}" for h in (extra_hrefs or [])]
+        + [f"{base_url}/{r['href']}" for r in index_rows]
+    )
     entries = "\n".join(f"  <url><loc>{u}</loc><lastmod>{stamp}</lastmod></url>" for u in urls)
     (out / "sitemap.xml").write_text(
         '<?xml version="1.0" encoding="UTF-8"?>\n'

@@ -157,12 +157,22 @@
     <p>Benchmark a financial concept across an industry, HQ state, or a curated peer group.</p>
     {% if site.app_url %}<a href="{{ site.app_url }}/compare" target="_blank" rel="noreferrer">Open ↗</a>{% endif %}
   </div>
+  {% if has_macro %}
+  <div class="feature-card">
+    <span class="tag-mirror">On this mirror</span>
+    <h3>Macro series</h3>
+    <p>{{ macro_series_count }} FRED macro series in {{ macro_bundle_count }} theme bundle{{ macro_bundle_count|pluralize }} —
+      latest values, trends, and CSV/JSON downloads.</p>
+    <a href="macro/index.html">Browse macro data →</a>
+  </div>
+  {% else %}
   <div class="feature-card">
     <span class="tag-app">Interactive app</span>
     <h3>Macro series</h3>
     <p>FRED macro series organized into theme bundles, with Grid/Overlay/Table views and unit transforms.</p>
     {% if site.app_url %}<a href="{{ site.app_url }}/macro" target="_blank" rel="noreferrer">Open ↗</a>{% endif %}
   </div>
+  {% endif %}
   <div class="feature-card">
     <span class="tag-app">Interactive app</span>
     <h3>Warehouse-wide filing search</h3>

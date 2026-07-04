@@ -13,6 +13,7 @@ failing never aborts the whole publish — it is reported in the summary instead
 from __future__ import annotations
 
 import logging
+import os
 import time
 from pathlib import Path
 from typing import Any, Iterable
@@ -79,6 +80,28 @@ def sync_company_for_site(
     return company
 
 
+def sync_macro_for_site(*, delay: float = 0.5, days_back: int = 365 * 20) -> bool:
+    """Best-effort FRED bundle sync so the static site can publish macro pages.
+
+    Requires ``FRED_API_KEY``; silently skipped without it (the site renders
+    whatever series data is already warehoused, or omits the macro section
+    entirely). A failing sync never blocks the company publish.
+    """
+    if not os.getenv("FRED_API_KEY"):
+        logger.info(
+            "FRED_API_KEY not set — skipping macro sync (macro pages render only if data exists)"
+        )
+        return False
+    from django.core.management import call_command
+
+    try:
+        call_command("refresh_series_bundles", delay=delay, days_back=days_back)
+    except Exception as exc:  # noqa: BLE001 - macro must not block the publish
+        logger.warning("macro (FRED) sync failed: %s", exc)
+        return False
+    return True
+
+
 def publish_site(
     tickers: Iterable[str],
     output_dir: str | Path,
@@ -88,14 +111,18 @@ def publish_site(
     user_agent_email: str | None = None,
     leadership_limit: int = 10,
     force_refresh: bool = False,
+    macro: bool = True,
     base_url: str | None = None,
     app_url: str | None = None,
     source_url: str | None = None,
 ) -> dict[str, Any]:
     """Sync ``tickers`` (unless ``sync=False``) and render the static site.
 
-    Returns the ``generate_site`` summary plus ``companies`` (published count)
-    and ``errors`` (ticker -> message for companies that were skipped).
+    ``macro=True`` additionally syncs the FRED series bundles when a
+    ``FRED_API_KEY`` is available (skipped otherwise); the macro section renders
+    from whatever series data ends up warehoused. Returns the ``generate_site``
+    summary plus ``companies`` (published count) and ``errors`` (ticker ->
+    message for companies that were skipped).
     """
     companies: list[Company] = []
     seen_pks: set[int] = set()
@@ -131,9 +158,12 @@ def publish_site(
     if not companies:
         raise RuntimeError(f"No companies to publish (errors: {errors or 'none'})")
 
+    macro_synced = sync_macro_for_site(delay=delay) if (macro and sync) else False
+
     summary = generate_site(
         companies, output_dir, base_url=base_url, app_url=app_url, source_url=source_url
     )
     summary["companies"] = len(companies)
     summary["errors"] = errors
+    summary["macro_synced"] = macro_synced
     return summary

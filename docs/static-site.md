@@ -24,6 +24,13 @@ preview) plus:
   editions comparison, a disclosure section, and the full searchable company table (`#browse`,
   unchanged behavior from before) below the marketing content
 - `about.html` — data sources, methodology, and the two-front-ends story
+- `macro/` — the **FRED macro section** (when series data is warehoused): `macro/index.html`
+  lists the curated theme bundles; `macro/<slug>/index.html` renders each bundle's series with
+  latest value, 1M/1Y deltas, a server-rendered SVG sparkline (no JS required), curation notes,
+  industry-relevance tags, and a link back to the series on fred.stlouisfed.org — plus
+  per-bundle `observations.csv` (full synced history, long format) and `bundle.json`.
+  Includes the required FRED® API attribution. Omitted entirely when nothing is synced —
+  no empty shell pages, and the "Macro" nav link only appears when the section exists.
 - per-company `company.json`, `facts.csv`, `metrics.csv`, `statements.csv`, `filings.csv`,
   `leadership.csv`; site-wide `companies.json` / `companies.csv`
 - `.nojekyll` (always) and `sitemap.xml` / `robots.txt` (when a base URL is configured)
@@ -51,8 +58,14 @@ blank figures.
    EDGAR (DB-first payload cache, paced with `--delay`), compute derived metrics, and
    best-effort sync leadership (Forms 3/4/5). A failing ticker is reported and skipped —
    never aborts the publish.
-2. Render the site with `generate_site`
-   ([`warehouse/services/static_site.py`](../src/warehouse/services/static_site.py)).
+2. If a `FRED_API_KEY` is present (and `--skip-macro` isn't passed), refresh the FRED series
+   bundles (`refresh_series_bundles`) so the macro section publishes with fresh data. No key →
+   the sync is skipped and the macro section renders only from already-warehoused data (or is
+   omitted). A failing FRED sync never blocks the company publish.
+3. Render the site with `generate_site`
+   ([`warehouse/services/static_site.py`](../src/warehouse/services/static_site.py)); macro
+   context comes from
+   [`public_data/services/static_export.py`](../src/public_data/services/static_export.py).
 
 ```bash
 cd src
@@ -85,6 +98,9 @@ One-time repository setup:
    email in the `User-Agent`; the workflow fails fast without it.
 3. Optional: a `STATIC_SITE_APP_URL` repository variable with the public URL of the
    interactive app; every static page then shows a "Live app ↗" cross-link.
+4. Optional: a `FRED_API_KEY` repository **secret**
+   ([free key](https://fred.stlouisfed.org/docs/api/api_key.html)) to publish the macro
+   section. Without it the build still succeeds — macro pages are simply omitted.
 
 The published URL is `https://<owner>.github.io/<repo>/` (the workflow derives it
 automatically for the sitemap). All intra-site links are relative, so the site works at any
@@ -105,5 +121,6 @@ base path — project pages, a custom domain, or `file://` on disk.
 | `STATIC_SITE_APP_URL` | templates | "Live app" cross-link on the mirror |
 | `STATIC_SITE_SOURCE_URL` | templates | "Source" link (defaults to this repo) |
 | `USER_AGENT_EMAIL` | SEC client | Required contact email for SEC fair access |
+| `FRED_API_KEY` | FRED provider | Optional — enables the macro section's FRED sync at build time |
 
 CLI flags (`--base-url`, `--app-url`) override the env vars per run.
