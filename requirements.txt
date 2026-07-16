@@ -40,7 +40,7 @@ click-repl==0.3.0
     # via celery
 dj-database-url==3.1.2
     # via -r requirements.in
-django==6.0.6
+django==6.0.7
     # via
     #   -r requirements.in
     #   dj-database-url
@@ -50,13 +50,13 @@ django==6.0.6
     #   drf-spectacular
 django-cors-headers==4.9.0
     # via -r requirements.in
-django-filter==25.2
+django-filter==26.1
     # via -r requirements.in
 djangorestframework==3.17.1
     # via
     #   -r requirements.in
     #   drf-spectacular
-drf-spectacular==0.29.0
+drf-spectacular==0.30.0
     # via -r requirements.in
 gunicorn==26.0.0
     # via -r requirements.in
@@ -86,7 +86,7 @@ python-dotenv==1.2.2
     # via -r requirements.in
 pyyaml==6.0.3
     # via drf-spectacular
-redis==8.0.0
+redis==8.0.1
     # via -r requirements.in
 referencing==0.37.0
     # via
@@ -100,7 +100,7 @@ rpds-py==2026.5.1
     # via
     #   jsonschema
     #   referencing
-sentry-sdk==2.62.0
+sentry-sdk==2.66.0
     # via -r requirements.in
 six==1.17.0
     # via python-dateutil
