@@ -1,14 +1,14 @@
 # Local dev + CI (install alongside requirements.txt)
-pytest>=8.0
-pytest-django>=4.8
-pytest-cov>=5.0
-ruff>=0.8
-responses>=0.25
-factory-boy>=3.3
-freezegun>=1.5
+pytest>=9.1.1
+pytest-django>=4.12.0
+pytest-cov>=7.1.0
+ruff>=0.15.22
+responses>=0.26.2
+factory-boy>=3.3.3
+freezegun>=1.5.5
 
 # Type checking (advisory) + hooks + audit
-mypy>=1.13,<2.2  # capped: django-stubs[compatible-mypy] requires mypy<2.2
-django-stubs[compatible-mypy]>=5.0
-pre-commit>=3.7
-pip-audit>=2.7
+mypy>=2.3.0,<2.4  # capped: django-stubs[compatible-mypy] requires mypy<2.2
+django-stubs[compatible-mypy]>=6.0.7
+pre-commit>=4.6.0
+pip-audit>=2.10.1

@@ -5,15 +5,15 @@
 #   pip-compile --upgrade-package <name> requirements.in
 
 # Web / API stack
-django>=5.0,<7
+django>=6.0.7,<7
 djangorestframework>=3.15
-django-filter>=24.2
+django-filter>=26.1
 dj-database-url>=2.2
 psycopg2-binary>=2.9
 django-cors-headers>=4.3
-drf-spectacular>=0.27          # OpenAPI 3 schema + Swagger/Redoc docs
+drf-spectacular>=0.30.0          # OpenAPI 3 schema + Swagger/Redoc docs
 gunicorn>=22.0
-sentry-sdk>=2.0
+sentry-sdk>=2.66.0
 
 # SEC client + HTM/HTML parsing
 requests>=2.31
@@ -23,7 +23,7 @@ lxml>=5.0          # BeautifulSoup parser backend (src/sec_edgar/parsers/htm.py)
 
 # Async processing (Phase 7) — Celery with a Redis broker/result backend
 celery>=5.3
-redis>=5.0
+redis>=8.0.1
 
 # Content extraction (Phase 8) — Apache Tika client (talks to a Tika server sidecar)
 tika>=2.6
