@@ -1,7 +1,6 @@
 # Releasing
 
-This repo uses the standardized [bamr87 release pipeline](https://github.com/bamr87/.github#readme).
-You don't bump versions or edit the changelog by hand — [release-please](https://github.com/googleapis/release-please) does.
+This repo uses the standardized [bamr87 release pipeline](https://github.com/bamr87/.github#readme). You don't bump versions or edit the changelog by hand — [release-please](https://github.com/googleapis/release-please) does.
 
 ## How a release happens
 
@@ -22,5 +21,4 @@ You don't bump versions or edit the changelog by hand — [release-please](https
 - `(none)`
 - Optional `RELEASE_PLEASE_TOKEN` PAT so the release PR triggers CI.
 
-To cut a release manually (rare), merge any pending release PR, or push an empty
-`chore: release` commit to re-trigger release-please.
+To cut a release manually (rare), merge any pending release PR, or push an empty `chore: release` commit to re-trigger release-please.
