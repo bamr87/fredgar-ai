@@ -6,7 +6,9 @@ name: Release
 
 on:
   push:
-    branches: [master]
+    # The repo's default branch is `main` — the adopt-release.sh scaffold shipped
+    # `master`, which never matched, so release-please had zero runs in history.
+    branches: [main]
 
 permissions:
   contents: write

@@ -5,9 +5,17 @@ on:
     branches: [main, master]
   pull_request:
 
+# One CI run per ref at a time: Dependabot merge trains land several pushes
+# within seconds (4 within 16s on 2026-07-16) and each got a full 8-job run.
+# Superseded runs are cancelled; only the newest commit on the ref is tested.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   frontend:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
@@ -25,6 +33,7 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
@@ -39,6 +48,7 @@ jobs:
 
   typecheck:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     continue-on-error: true   # advisory until the codebase is fully typed
     steps:
       - uses: actions/checkout@v7
@@ -58,6 +68,7 @@ jobs:
 
   dependency-audit:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     continue-on-error: true   # non-blocking advisory scan
     steps:
       - uses: actions/checkout@v7
@@ -74,6 +85,7 @@ jobs:
 
   django-migrations:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
@@ -92,6 +104,7 @@ jobs:
 
   deploy-check:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: [lint, django-migrations]
     steps:
       - uses: actions/checkout@v7
@@ -120,6 +133,7 @@ jobs:
   # branch-mode Jekyll builder if Pages is ever set to "Deploy from a branch".
   static-site-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: [lint, django-migrations]
     steps:
       - uses: actions/checkout@v7
@@ -171,6 +185,7 @@ jobs:
 
   test-sqlite:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: [lint, django-migrations]
     steps:
       - uses: actions/checkout@v7
@@ -206,6 +221,7 @@ jobs:
 
   test-postgres:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: [lint, django-migrations]
     services:
       postgres:
