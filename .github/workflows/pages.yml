@@ -27,16 +27,21 @@ on:
         description: "Comma-separated tickers to publish (empty = default cohort)"
         required: false
         default: ""
-  # Publish on EVERY push to the default branch (no paths filter, deliberately):
-  # while the repo's Pages source is "Deploy from a branch", GitHub's built-in
-  # Jekyll pipeline also deploys on every push and can replace this site with a
-  # Jekyll rendering of the repo. Running our publish on every push means our
-  # deployment always lands last and the mirror self-heals within minutes.
-  # (The real fix is Settings -> Pages -> Source: "GitHub Actions", which
-  # disables the Jekyll pipeline entirely; this trigger stays correct either
-  # way and keeps the published site current on every merge.)
+  # Publish only when the rendered site's inputs change. This paths filter is
+  # safe only while Settings -> Pages -> Source is "GitHub Actions"
+  # (build_type=workflow): in that mode GitHub's built-in branch-mode Jekyll
+  # pipeline never runs, so there is no competing deployment to out-race.
+  # (Under the old "Deploy from a branch" source this workflow deliberately ran
+  # on EVERY push, unfiltered, so its deployment always landed last and healed
+  # any Jekyll clobber within minutes — that rationale is retired with the
+  # source switch. If Pages is ever set back to branch mode, remove this
+  # paths filter.)
   push:
     branches: [main, master]
+    paths:
+      - "src/**"
+      - "requirements.txt"
+      - ".github/workflows/pages.yml"
 
 permissions:
   contents: read
