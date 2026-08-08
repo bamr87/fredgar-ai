@@ -15,7 +15,9 @@ attrs==26.1.0
     #   jsonschema
     #   referencing
 beautifulsoup4==4.15.0
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   tika
 billiard==4.2.4
     # via celery
 celery==5.6.3
@@ -40,7 +42,7 @@ click-repl==0.3.0
     # via celery
 dj-database-url==3.1.2
     # via -r requirements.in
-django==6.0.7
+django==6.0.8
     # via
     #   -r requirements.in
     #   dj-database-url
@@ -52,7 +54,7 @@ django-cors-headers==4.9.0
     # via -r requirements.in
 django-filter==26.1
     # via -r requirements.in
-djangorestframework==3.17.1
+djangorestframework==3.17.2
     # via
     #   -r requirements.in
     #   drf-spectacular
@@ -86,7 +88,7 @@ python-dotenv==1.2.2
     # via -r requirements.in
 pyyaml==6.0.3
     # via drf-spectacular
-redis==8.0.1
+redis==8.1.0
     # via -r requirements.in
 referencing==0.37.0
     # via
@@ -100,7 +102,7 @@ rpds-py==2026.5.1
     # via
     #   jsonschema
     #   referencing
-sentry-sdk==2.66.0
+sentry-sdk==2.66.1
     # via -r requirements.in
 six==1.17.0
     # via python-dateutil
@@ -110,7 +112,7 @@ sqlparse==0.5.5
     # via django
 tenacity==9.1.4
     # via -r requirements.in
-tika==3.1.0
+tika==3.3.2
     # via -r requirements.in
 typing-extensions==4.15.0
     # via
@@ -133,6 +135,3 @@ vine==5.1.0
     #   kombu
 wcwidth==0.8.1
     # via prompt-toolkit
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools
