@@ -6,7 +6,9 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // `types/` is the generated declaration tree emitted by tsconfig.ds.json for
+  // /design-sync — build output, not source.
+  globalIgnores(['dist', 'types']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

@@ -1,0 +1,19 @@
+{
+  /* Declaration-only build for the design-system entry (/design-sync).
+     Emits `types/` so the converter can read real prop types instead of
+     falling back to `[key: string]: unknown`. Not part of `npm run build`. */
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "declarationDir": "./types",
+    "rootDir": ".",
+    "allowImportingTsExtensions": false,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.ds.tsbuildinfo",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": ["design-system.entry.tsx", "src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/test"]
+}

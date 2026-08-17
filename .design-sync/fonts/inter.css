@@ -1,0 +1,21 @@
+/* Inter (variable) — the family `--font-sans` names in src/index.css.
+   The app itself never loads a webfont, so it falls back to system-ui; the
+   synced bundle ships Inter so previews and generated designs render in the
+   typeface the tokens actually declare.
+   Inter is SIL Open Font License 1.1 — https://github.com/rsms/inter */
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('./InterVariable.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('./InterVariable-Italic.woff2') format('woff2');
+}
