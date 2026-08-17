@@ -2,6 +2,28 @@
 
 Repo-specific gotchas for `/design-sync`. Read this before re-syncing.
 
+## Running it
+
+From the repo root, after staging the skill's scripts into `.ds-sync/` and installing its deps there:
+
+```sh
+cd frontend && npx tsc -p tsconfig.ds.json && cd ..     # cfg.buildCmd — regenerates types/
+NODE_PATH=.ds-sync/node_modules node .ds-sync/resync.mjs \
+  --config .design-sync/config.json --node-modules frontend/node_modules \
+  --entry frontend/design-system.entry.tsx --out ./ds-bundle
+```
+
+Both `--entry` and `--node-modules` are required every run — this package has no library `dist/`, and omitting `--entry` makes the converter look for `frontend/node_modules/frontend`, which does not exist. `NODE_PATH` is needed because playwright lives in `.ds-sync/node_modules`, not the repo root.
+
+## CI gotchas this repo enforces
+
+These bit during the first sync — they are not design-sync problems, they are repo standards.
+
+- **`tools/unwrap-prose.py --check` (the `oneline` CI job) rejects hard-wrapped markdown.** Anything you add under `.design-sync/` — `NOTES.md`, `conventions.md`, doc stubs — must be one long line per paragraph. Run `python3 tools/unwrap-prose.py --write <files>` before committing.
+- **`frontend/types/` is eslint-ignored** in `eslint.config.js`; it is generated output and trips `@typescript-eslint/no-explicit-any`. Don't remove that ignore.
+- **`design-system.entry.tsx` carries a file-level `react-refresh/only-export-components` disable.** The rule cannot verify `export *` and the file is outside the app's module graph anyway.
+- `npm run lint`, `npm run build`, `npm test`, and `ruff check src tests` all pass on this branch — re-run them after touching anything in `frontend/`.
+
 ## Shape of this repo
 
 - The design system is an **application**, not a published library:
