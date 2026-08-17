@@ -1,0 +1,53 @@
+{
+  "pkg": "frontend",
+  "globalName": "FredgarUI",
+  "shape": "package",
+  "entry": "./design-system.entry.tsx",
+  "tsconfig": "tsconfig.app.json",
+  "cssEntry": "src/index.css",
+  "provider": {
+    "component": "DesignSystemProvider"
+  },
+  "componentSrcMap": {
+    "DesignSystemProvider": null,
+    "ApiError": null
+  },
+  "buildCmd": "cd frontend && npx tsc -p tsconfig.ds.json",
+  "docsDir": "../.design-sync/docs",
+  "extraFonts": [
+    "../.design-sync/fonts/inter.css"
+  ],
+  "dtsPropsFor": {
+    "Button": "variant?: \"default\" | \"primary\" | \"ghost\" | \"danger\";\nsize?: \"sm\";\nloading?: boolean;\ndisabled?: boolean;\ntype?: \"button\" | \"submit\" | \"reset\";\nonClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;\ntitle?: string;\n\"aria-label\"?: string;\nclassName?: string;\nstyle?: React.CSSProperties;\nchildren?: React.ReactNode;",
+    "DataTable": "columns: { key: string; header: React.ReactNode; render: (row: any) => React.ReactNode; align?: \"left\" | \"right\"; sortable?: boolean; sortValue?: (row: any) => number | string; width?: number | string }[];\nrows: any[];\nrowKey: (row: any, i: number) => string | number;\nonRowClick?: (row: any) => void;\nonRowHover?: (row: any) => void;\ncompact?: boolean;\ninitialSort?: { key: string; dir: \"asc\" | \"desc\" };\nclassName?: string;",
+    "Tabs": "tabs: { key: string; label: React.ReactNode; count?: number; icon?: React.ReactNode }[];\nvalue: string;\nonChange: (k: string) => void;",
+    "Segmented": "value: string;\noptions: { value: string; label: React.ReactNode }[];\nonChange: (v: string) => void;",
+    "Query": "q: { isPending: boolean; isError: boolean; error: unknown; data: unknown };\nchildren: (data: any) => React.ReactNode;\nisEmpty?: (data: any) => boolean;\nempty?: React.ReactNode;\nloadingLabel?: string;\npending?: React.ReactNode;",
+    "TrendChart": "data: { x: string; y: number | null }[];\ncolor?: string;\narea?: boolean;\nheight?: number;\nfmt?: (v: number) => string;",
+    "Sparkline": "data: { x: string; y: number | null }[];\ncolor?: string;\nheight?: number;\nwidth?: number | string;",
+    "BarsChart": "data: { x: string; y: number | null }[];\nheight?: number;\nfmt?: (v: number) => string;\ncolorBy?: (p: { x: string; y: number | null }, i: number) => string;\nonBarClick?: (p: { x: string; y: number | null }) => void;",
+    "MultiLineChart": "series: { id: string; name: string; color: string; points: { x: string; y: number | null }[] }[];\nheight?: number;\nfmt?: (v: number) => string;",
+    "CompanyMultiSelect": "selected: { id: number; name: string; ticker: string | null; cik: string }[];\nonChange: (next: { id: number; name: string; ticker: string | null; cik: string }[]) => void;\nplaceholder?: string;"
+  },
+  "overrides": {
+    "Drawer": {
+      "cardMode": "single",
+      "primaryStory": "FilingDetail",
+      "viewport": "900x620"
+    },
+    "ToastProvider": {
+      "cardMode": "single",
+      "primaryStory": "AllThreeKinds",
+      "viewport": "820x620"
+    },
+    "AppShell": {
+      "cardMode": "single",
+      "primaryStory": "FullChrome",
+      "viewport": "1280x800"
+    },
+    "Stat": {
+      "cardMode": "column"
+    }
+  },
+  "readmeHeader": ".design-sync/conventions.md"
+}
