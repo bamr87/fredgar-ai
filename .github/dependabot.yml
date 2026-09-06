@@ -19,6 +19,15 @@ updates:
     groups:
       npm:
         patterns: ["*"]
+        # `typescript` moves on its own. typescript-eslint declares a hard peer
+        # ceiling on it (8.69.0, the current latest, still says
+        # typescript@">=4.8.4 <6.1.0"), so a TypeScript major lands ahead of its
+        # linter and `npm ci` dies on ERESOLVE. Grouped, that one package took
+        # the whole 21-update PR down with it — twice (#65, and the
+        # 2026-08-17 group PR). Excluded, the compatible updates merge on their
+        # own and the TypeScript bump waits, visibly, in its own PR until
+        # typescript-eslint widens the range.
+        exclude-patterns: ["typescript"]
 
   # GitHub Actions used by CI.
   - package-ecosystem: "github-actions"
