@@ -170,15 +170,15 @@ def _join(value: Any, sep: str = "|") -> str:
 def build_rows(dataset: EnrichmentDataset) -> Iterator[dict]:
     """One assembled master row per record, with trust columns derived last."""
     golden_by_record: dict[int, dict[str, dict]] = {}
-    for g in EnrichmentGoldenField.objects.filter(record__dataset=dataset).iterator(
+    for golden_row in EnrichmentGoldenField.objects.filter(record__dataset=dataset).iterator(
         chunk_size=2000
     ):
-        golden_by_record.setdefault(g.record_id, {})[g.field] = {
-            "value": g.value,
-            "confidence": g.confidence,
-            "provider": g.provider,
-            "ev_url": g.ev_url,
-            "contested": g.contested,
+        golden_by_record.setdefault(golden_row.record_id, {})[golden_row.field] = {
+            "value": golden_row.value,
+            "confidence": golden_row.confidence,
+            "provider": golden_row.provider,
+            "ev_url": golden_row.ev_url,
+            "contested": golden_row.contested,
         }
 
     verified_website_records = set(
@@ -319,7 +319,7 @@ def build_rows(dataset: EnrichmentDataset) -> Iterator[dict]:
 
         # Completeness is scored on the ASSEMBLED row — having three conflicting
         # guesses is not the same as knowing something.
-        empty = (None, "", [], {}, 0, "0")
+        empty: tuple[Any, ...] = (None, "", [], {}, 0, "0")
         got = sum(w for f, w in COMPLETENESS_WEIGHTS.items() if row.get(f) not in empty)
         row["completeness"] = round(got / MAX_SCORE, 3)
         # Coverage a human could act on: excludes modelled values.

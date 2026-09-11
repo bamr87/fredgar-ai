@@ -141,7 +141,16 @@ class Runner:
             try:
                 self._drive(rec, providers, stats)
             finally:
-                connections.close_all()
+                # Close only a connection this runner caused to be opened. Django
+                # connections are thread-local, so a worker thread must clean up
+                # its own — but with workers=1 `work` runs inline on the caller's
+                # thread, and closing there tears down a connection we borrowed.
+                # On SQLite Django silently reopens and nothing looks wrong; on
+                # Postgres the caller's next query raises "connection already
+                # closed", and inside a test's atomic block that is every query
+                # after the first record.
+                if threading.current_thread() is not threading.main_thread():
+                    connections.close_all()
 
         if self.workers > 1:
             with ThreadPoolExecutor(max_workers=self.workers) as ex:

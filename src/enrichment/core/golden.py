@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 from collections import defaultdict
+from typing import Any
 
 # Higher wins. Registry/filing data first, then the company itself, then
 # third-party descriptions, then anything inferred locally.
@@ -82,7 +83,7 @@ def resolve_record(rec) -> dict[str, dict]:
     for fld, claims in by_field.items():
         if fld in MULTI_VALUED:
             # Union of distinct values; confidence = best seen for that value.
-            best = {}
+            best: dict[str, Any] = {}
             for c in claims:
                 k = json.dumps(c.value, sort_keys=True, default=str)
                 if k not in best or _rank(c) > _rank(best[k]):

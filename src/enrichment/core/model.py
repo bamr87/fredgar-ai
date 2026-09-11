@@ -15,7 +15,11 @@ from __future__ import annotations
 import datetime as dt
 import hashlib
 import json
-from dataclasses import asdict, dataclass, field
+
+# `field` is imported under an alias because Claim has an attribute called
+# `field`, which shadows it inside the class body.
+from dataclasses import asdict, dataclass
+from dataclasses import field as dataclass_field
 from typing import Any
 
 
@@ -31,7 +35,7 @@ class Evidence:
     url: str | None = None  # the page/endpoint that asserted it
     snippet: str | None = None  # the text that says so, verbatim, trimmed
     locator: str | None = None  # xpath / json path / xbrl tag / csv row
-    retrieved_at: str = field(default_factory=NOW)
+    retrieved_at: str = dataclass_field(default_factory=NOW)
 
     def digest(self) -> str:
         return hashlib.sha1(f"{self.url}|{self.locator}|{self.snippet}".encode()).hexdigest()[:16]
@@ -45,7 +49,7 @@ class Claim:
     value: Any
     confidence: float  # 0-1, the provider's own honest estimate
     provider: str
-    evidence: Evidence = field(default_factory=Evidence)
+    evidence: Evidence = dataclass_field(default_factory=Evidence)
     # Set when a provider has actively checked the value rather than proposed it.
     # A guessed domain and a domain whose homepage names the company are both
     # 'website' claims; only one of them is verified.
@@ -61,9 +65,9 @@ class Record:
 
     record_id: int
     source_key: str  # the original name/identifier from the list
-    fields: dict[str, Any] = field(default_factory=dict)
-    claims: list[Claim] = field(default_factory=list)
-    ran: set[str] = field(default_factory=set)  # provider names already executed
+    fields: dict[str, Any] = dataclass_field(default_factory=dict)
+    claims: list[Claim] = dataclass_field(default_factory=list)
+    ran: set[str] = dataclass_field(default_factory=set)  # provider names already executed
 
     # --- read side ------------------------------------------------------------
     def get(self, name: str, default=None):

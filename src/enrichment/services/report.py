@@ -47,7 +47,7 @@ def dataset_report(dataset: EnrichmentDataset) -> dict[str, Any]:
         )
     }
 
-    by_provider = {}
+    by_provider: dict[str, dict[str, int]] = {}
     for row in (
         EnrichmentProviderRun.objects.filter(record__dataset=dataset)
         .values("provider", "status")

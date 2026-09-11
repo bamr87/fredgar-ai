@@ -246,9 +246,11 @@ def build_rpe_benchmark(dataset=None) -> dict[str, Any]:
             if len(values) >= MIN_SAMPLE
         }
 
-    benchmark = {
-        "sic4": summarize(ratios_by_sic4),
-        "sic2": summarize(ratios_by_sic2),
+    by_sic4 = summarize(ratios_by_sic4)
+    by_sic2 = summarize(ratios_by_sic2)
+    benchmark: dict[str, Any] = {
+        "sic4": by_sic4,
+        "sic2": by_sic2,
         "all_filers": (
             {"rpe": statistics.median(all_ratios), "n": len(all_ratios)} if all_ratios else None
         ),
@@ -256,8 +258,8 @@ def build_rpe_benchmark(dataset=None) -> dict[str, Any]:
     logger.info(
         "Revenue benchmark: %s filers, %s SIC-4 groups, %s SIC-2 groups",
         len(all_ratios),
-        len(benchmark["sic4"]),
-        len(benchmark["sic2"]),
+        len(by_sic4),
+        len(by_sic2),
     )
     return benchmark
 

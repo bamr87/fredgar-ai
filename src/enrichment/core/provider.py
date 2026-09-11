@@ -126,7 +126,9 @@ class Registry:
         prints: "what would this framework actually do to my list?", answered
         before you spend a single request.
         """
-        have, waves, used = set(available), [], set()
+        have: set[str] = set(available)
+        waves: list[list[str]] = []
+        used: set[str] = set()
         while True:
             wave = [p.name for p in self.all() if p.name not in used and p.requires <= have]
             if not wave:

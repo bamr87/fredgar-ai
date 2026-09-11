@@ -12,6 +12,7 @@ loses nothing the others found.
 
 from __future__ import annotations
 
+import datetime as dt
 import hashlib
 import json
 from typing import Any, Iterable
@@ -164,5 +165,8 @@ def _as_datetime(value):
             return timezone.now()
         value = parsed
     if timezone.is_naive(value):
-        return timezone.make_aware(value, timezone.utc)
+        # `django.utils.timezone.utc` was deprecated in Django 4 and REMOVED in 5;
+        # this repo runs 6, so the old spelling is an AttributeError waiting for
+        # the first naive datetime to reach it. Use the stdlib constant.
+        return timezone.make_aware(value, dt.timezone.utc)
     return value

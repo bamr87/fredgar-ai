@@ -20,6 +20,7 @@ import datetime as dt
 import json
 import warnings
 from pathlib import Path
+from typing import Any
 
 from django.core.management.base import BaseCommand, CommandError
 
@@ -68,8 +69,11 @@ class Command(BaseCommand):
                 record["un_region"] = row.get("UNregion")
                 record["eu"] = bool(isinstance(row.get("EU"), str) and row.get("EU"))
                 record["oecd"] = bool(row.get("OECD") == row.get("OECD") and row.get("OECD"))
+            info: dict[str, Any] = {}
             try:
-                info = CountryInfo(country.alpha_2).info()
+                # countryinfo declares a fully-populated TypedDict it does not
+                # always return, so this is read as a plain mapping.
+                info = dict(CountryInfo(country.alpha_2).info())
             except Exception:  # noqa: BLE001 - countryinfo raises freely on gaps
                 info = {}
             if info:
