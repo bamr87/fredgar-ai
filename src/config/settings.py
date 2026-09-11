@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'warehouse',
     'sec_edgar',
     'public_data',
+    'enrichment',
     'api',
 ]
 

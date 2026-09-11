@@ -1,0 +1,714 @@
+{
+ "ambiguous_forms": [
+  "ad",
+  "ag",
+  "as",
+  "co",
+  "coltd",
+  "company",
+  "companylimited",
+  "corp",
+  "corporation",
+  "cv",
+  "group",
+  "holding",
+  "holdings",
+  "inc",
+  "incorporated",
+  "international",
+  "limited",
+  "ltd",
+  "sa",
+  "se"
+ ],
+ "global_registry": {
+  "free_api": true,
+  "licence": "CC0",
+  "name": "GLEIF Global LEI Index",
+  "note": "Covers any entity with an LEI; carries the local registration number in entity.registeredAs, which links to the national register",
+  "url": "https://api.gleif.org"
+ },
+ "legal_form_jurisdiction": {
+  "ab": [
+   "SE"
+  ],
+  "ad": [
+   "BG",
+   "MK",
+   "RS"
+  ],
+  "ag": [
+   "AT",
+   "CH",
+   "DE",
+   "LI"
+  ],
+  "akciova": [
+   "CZ",
+   "SK"
+  ],
+  "aksjeselskap": [
+   "NO"
+  ],
+  "aps": [
+   "DK"
+  ],
+  "as": [
+   "CZ",
+   "DK",
+   "NO",
+   "SK",
+   "TR"
+  ],
+  "as_tr": [
+   "TR"
+  ],
+  "asa": [
+   "NO"
+  ],
+  "asi": [
+   "TR"
+  ],
+  "berhad": [
+   "BN",
+   "MY"
+  ],
+  "bhd": [
+   "BN",
+   "MY"
+  ],
+  "bt": [
+   "HU"
+  ],
+  "bv": [
+   "BE",
+   "NL"
+  ],
+  "bvba": [
+   "BE"
+  ],
+  "coltd": [
+   "CN",
+   "HK",
+   "JP",
+   "KR",
+   "SG",
+   "TH",
+   "TW"
+  ],
+  "companylimited": [
+   "HK",
+   "MY",
+   "SG",
+   "TH"
+  ],
+  "corp": [
+   "CA",
+   "JP",
+   "PH",
+   "US"
+  ],
+  "cv": [
+   "NL"
+  ],
+  "cv_id": [
+   "ID"
+  ],
+  "cvba": [
+   "BE"
+  ],
+  "dd": [
+   "BA",
+   "HR",
+   "SI"
+  ],
+  "decv": [
+   "MX"
+  ],
+  "doo": [
+   "BA",
+   "HR",
+   "ME",
+   "MK",
+   "RS",
+   "SI"
+  ],
+  "eg": [
+   "DE"
+  ],
+  "eireli": [
+   "BR"
+  ],
+  "eood": [
+   "BG"
+  ],
+  "eurl": [
+   "FR"
+  ],
+  "gk": [
+   "JP"
+  ],
+  "gmbh": [
+   "AT",
+   "CH",
+   "DE",
+   "LI",
+   "LU"
+  ],
+  "gmbhco": [
+   "AT",
+   "DE"
+  ],
+  "gmbhcokg": [
+   "AT",
+   "DE"
+  ],
+  "hb": [
+   "SE"
+  ],
+  "inc": [
+   "CA",
+   "JP",
+   "PH",
+   "US"
+  ],
+  "ivs": [
+   "DK"
+  ],
+  "jsc": [
+   "KZ",
+   "RU",
+   "TH",
+   "UA",
+   "VN"
+  ],
+  "kft": [
+   "HU"
+  ],
+  "kg": [
+   "AT",
+   "DE"
+  ],
+  "kgaa": [
+   "DE"
+  ],
+  "kk": [
+   "JP"
+  ],
+  "lda": [
+   "PT"
+  ],
+  "llc": [
+   "AE",
+   "AM",
+   "AZ",
+   "BH",
+   "EG",
+   "GE",
+   "KW",
+   "KZ",
+   "OM",
+   "QA",
+   "RU",
+   "SA",
+   "UA",
+   "US",
+   "UZ"
+  ],
+  "llp": [
+   "GB",
+   "IN",
+   "SG",
+   "US"
+  ],
+  "ltd": [
+   "AU",
+   "BD",
+   "CA",
+   "CY",
+   "GB",
+   "HK",
+   "IE",
+   "IL",
+   "IN",
+   "KE",
+   "LK",
+   "MT",
+   "MY",
+   "NG",
+   "NZ",
+   "PK",
+   "SG",
+   "ZA"
+  ],
+  "ltda": [
+   "BR",
+   "CL",
+   "CO",
+   "PT"
+  ],
+  "mbh": [
+   "AT",
+   "DE"
+  ],
+  "nv": [
+   "BE",
+   "NL"
+  ],
+  "nyrt": [
+   "HU"
+  ],
+  "oao": [
+   "RU"
+  ],
+  "ohg": [
+   "DE"
+  ],
+  "ood": [
+   "BG"
+  ],
+  "ooo": [
+   "BY",
+   "KZ",
+   "RU",
+   "UA"
+  ],
+  "oy": [
+   "FI"
+  ],
+  "oyj": [
+   "FI"
+  ],
+  "pao": [
+   "RU"
+  ],
+  "pat": [
+   "UA"
+  ],
+  "persero": [
+   "ID"
+  ],
+  "pjsc": [
+   "AE",
+   "EG",
+   "RU",
+   "SA",
+   "UA"
+  ],
+  "plc": [
+   "CY",
+   "GB",
+   "GH",
+   "IE",
+   "KE",
+   "MT",
+   "NG"
+  ],
+  "pt": [
+   "ID"
+  ],
+  "pte": [
+   "SG"
+  ],
+  "pty": [
+   "AU",
+   "NA",
+   "ZA"
+  ],
+  "pvt": [
+   "BD",
+   "IN",
+   "LK",
+   "PK"
+  ],
+  "sa": [
+   "AR",
+   "BE",
+   "BR",
+   "CH",
+   "CL",
+   "CO",
+   "ES",
+   "FR",
+   "GR",
+   "LU",
+   "MA",
+   "MX",
+   "PE",
+   "PL",
+   "PT",
+   "RO"
+  ],
+  "sadecv": [
+   "MX"
+  ],
+  "sapa": [
+   "IT"
+  ],
+  "sapi": [
+   "MX"
+  ],
+  "sapidecv": [
+   "MX"
+  ],
+  "sarl": [
+   "BF",
+   "BJ",
+   "CD",
+   "CG",
+   "CH",
+   "CI",
+   "CM",
+   "DZ",
+   "FR",
+   "GA",
+   "LB",
+   "LU",
+   "MA",
+   "MC",
+   "MG",
+   "ML",
+   "MR",
+   "NE",
+   "SN",
+   "TD",
+   "TG",
+   "TN"
+  ],
+  "sas": [
+   "CO",
+   "FR"
+  ],
+  "sas_it": [
+   "IT"
+  ],
+  "sci": [
+   "FR"
+  ],
+  "scl": [
+   "ES"
+  ],
+  "scv": [
+   "MX"
+  ],
+  "sderl": [
+   "MX"
+  ],
+  "sderldecv": [
+   "MX"
+  ],
+  "sdn": [
+   "BN",
+   "MY"
+  ],
+  "sdnbhd": [
+   "BN",
+   "MY"
+  ],
+  "ska": [
+   "PL"
+  ],
+  "sl": [
+   "ES"
+  ],
+  "sll": [
+   "ES"
+  ],
+  "slu": [
+   "ES"
+  ],
+  "snc": [
+   "FR"
+  ],
+  "spa": [
+   "DZ",
+   "IT",
+   "MA",
+   "TN"
+  ],
+  "spolka": [
+   "PL"
+  ],
+  "sprl": [
+   "BE"
+  ],
+  "spzoo": [
+   "PL"
+  ],
+  "spzoookg": [
+   "PL"
+  ],
+  "srl": [
+   "AR",
+   "CO",
+   "DO",
+   "IT",
+   "MX",
+   "PE",
+   "RO",
+   "UY"
+  ],
+  "srldecv": [
+   "MX"
+  ],
+  "sro": [
+   "CZ",
+   "SK"
+  ],
+  "tbk": [
+   "ID"
+  ],
+  "tov": [
+   "UA"
+  ],
+  "ug": [
+   "DE"
+  ],
+  "vof": [
+   "NL"
+  ],
+  "yk": [
+   "JP"
+  ],
+  "zao": [
+   "RU"
+  ],
+  "zrt": [
+   "HU"
+  ]
+ },
+ "registries": {
+  "AR": {
+   "free_api": false,
+   "name": "Inspección General de Justicia",
+   "ra": "RA000013",
+   "url": "https://www.argentina.gob.ar/justicia/igj"
+  },
+  "AT": {
+   "free_api": false,
+   "name": "Firmenbuch",
+   "ra": "RA000018",
+   "url": "https://justizonline.gv.at"
+  },
+  "AU": {
+   "free_api": true,
+   "name": "ASIC / Australian Business Register",
+   "ra": "RA000018",
+   "url": "https://abr.business.gov.au"
+  },
+  "BE": {
+   "free_api": true,
+   "name": "Kruispuntbank van Ondernemingen (KBO/BCE)",
+   "ra": "RA000030",
+   "url": "https://kbopub.economie.fgov.be"
+  },
+  "BR": {
+   "free_api": true,
+   "name": "Juntas Comerciais / Receita Federal CNPJ",
+   "ra": "RA000058",
+   "url": "https://solucoes.receita.fazenda.gov.br"
+  },
+  "CA": {
+   "free_api": true,
+   "name": "Corporations Canada / provincial registries",
+   "ra": "RA000073",
+   "url": "https://ised-isde.canada.ca"
+  },
+  "CH": {
+   "free_api": true,
+   "name": "Zefix / Handelsregister",
+   "ra": "RA000548",
+   "url": "https://www.zefix.ch"
+  },
+  "CN": {
+   "free_api": false,
+   "name": "National Enterprise Credit Information Publicity System",
+   "ra": "RA000544",
+   "url": "https://www.gsxt.gov.cn"
+  },
+  "CZ": {
+   "free_api": true,
+   "name": "Obchodní rejstřík (ARES)",
+   "ra": "RA000108",
+   "url": "https://ares.gov.cz"
+  },
+  "DE": {
+   "free_api": false,
+   "name": "Handelsregister / Unternehmensregister",
+   "ra": "RA000242",
+   "url": "https://www.unternehmensregister.de"
+  },
+  "DK": {
+   "free_api": true,
+   "name": "Det Centrale Virksomhedsregister (CVR)",
+   "ra": "RA000123",
+   "url": "https://datacvr.virk.dk"
+  },
+  "ES": {
+   "free_api": false,
+   "name": "Registro Mercantil",
+   "ra": "RA000551",
+   "url": "https://www.registradores.org"
+  },
+  "FI": {
+   "free_api": true,
+   "name": "Patentti- ja rekisterihallitus (PRH/YTJ)",
+   "ra": "RA000188",
+   "url": "https://avoindata.prh.fi"
+  },
+  "FR": {
+   "free_api": true,
+   "name": "Registre du Commerce et des Sociétés (INPI/INSEE SIRENE)",
+   "note": "SIRENE is open data",
+   "ra": "RA000189",
+   "url": "https://annuaire-entreprises.data.gouv.fr"
+  },
+  "GB": {
+   "free_api": true,
+   "name": "Companies House",
+   "note": "Full accounts for all companies, free API key",
+   "ra": "RA000585",
+   "url": "https://find-and-update.company-information.service.gov.uk"
+  },
+  "HK": {
+   "free_api": false,
+   "name": "Companies Registry",
+   "ra": "RA000388",
+   "url": "https://www.cr.gov.hk"
+  },
+  "ID": {
+   "free_api": false,
+   "name": "Kementerian Hukum dan HAM (AHU)",
+   "ra": "RA000398",
+   "url": "https://ahu.go.id"
+  },
+  "IE": {
+   "free_api": false,
+   "name": "Companies Registration Office",
+   "ra": "RA000402",
+   "url": "https://core.cro.ie"
+  },
+  "IL": {
+   "free_api": true,
+   "name": "Rasham HaChavarot (Registrar of Companies)",
+   "ra": "RA000403",
+   "url": "https://www.gov.il"
+  },
+  "IN": {
+   "free_api": false,
+   "name": "Ministry of Corporate Affairs (MCA21)",
+   "ra": "RA000396",
+   "url": "https://www.mca.gov.in"
+  },
+  "IT": {
+   "free_api": false,
+   "name": "Registro Imprese",
+   "ra": "RA000407",
+   "url": "https://www.registroimprese.it"
+  },
+  "JP": {
+   "free_api": true,
+   "name": "National Tax Agency Corporate Number / Homusho",
+   "ra": "RA000418",
+   "url": "https://www.houjin-bangou.nta.go.jp"
+  },
+  "KR": {
+   "free_api": false,
+   "name": "Korea Supreme Court Registry / NTS",
+   "ra": "RA000432",
+   "url": "https://www.iros.go.kr"
+  },
+  "MX": {
+   "free_api": false,
+   "name": "Registro Público de Comercio (SIGER)",
+   "ra": "RA000455",
+   "url": "https://siger2.economia.gob.mx"
+  },
+  "MY": {
+   "free_api": false,
+   "name": "Suruhanjaya Syarikat Malaysia (SSM)",
+   "ra": "RA000451",
+   "url": "https://www.ssm.com.my"
+  },
+  "NL": {
+   "free_api": false,
+   "name": "Kamer van Koophandel (KvK) Handelsregister",
+   "ra": "RA000463",
+   "url": "https://www.kvk.nl"
+  },
+  "NO": {
+   "free_api": true,
+   "name": "Brønnøysundregistrene (Enhetsregisteret)",
+   "note": "Fully open API",
+   "ra": "RA000472",
+   "url": "https://data.brreg.no"
+  },
+  "NZ": {
+   "free_api": true,
+   "name": "NZ Companies Office",
+   "ra": "RA000465",
+   "url": "https://companies-register.companiesoffice.govt.nz"
+  },
+  "PL": {
+   "free_api": true,
+   "name": "Krajowy Rejestr Sądowy (KRS)",
+   "ra": "RA000517",
+   "url": "https://api-krs.ms.gov.pl"
+  },
+  "PT": {
+   "free_api": false,
+   "name": "Registo Comercial",
+   "ra": "RA000519",
+   "url": "https://justica.gov.pt"
+  },
+  "RU": {
+   "free_api": true,
+   "name": "ЕГРЮЛ (EGRUL) / FNS",
+   "ra": "RA000534",
+   "url": "https://egrul.nalog.ru"
+  },
+  "SE": {
+   "free_api": false,
+   "name": "Bolagsverket",
+   "ra": "RA000544",
+   "url": "https://bolagsverket.se"
+  },
+  "SG": {
+   "free_api": false,
+   "name": "ACRA BizFile",
+   "ra": "RA000554",
+   "url": "https://www.acra.gov.sg"
+  },
+  "TH": {
+   "free_api": false,
+   "name": "Department of Business Development",
+   "ra": "RA000577",
+   "url": "https://datawarehouse.dbd.go.th"
+  },
+  "TR": {
+   "free_api": false,
+   "name": "Ticaret Sicil Gazetesi",
+   "ra": "RA000584",
+   "url": "https://www.ticaretsicil.gov.tr"
+  },
+  "TW": {
+   "free_api": true,
+   "name": "MOEA Department of Commerce",
+   "ra": "RA000575",
+   "url": "https://findbiz.nat.gov.tw"
+  },
+  "US": {
+   "free_api": true,
+   "name": "Secretary of State (per state); SEC EDGAR for registrants",
+   "note": "No single federal company register; EDGAR covers registrants only",
+   "ra": "RA000598",
+   "url": "https://www.sec.gov/edgar"
+  },
+  "ZA": {
+   "free_api": false,
+   "name": "CIPC",
+   "ra": "RA000589",
+   "url": "https://www.cipc.co.za"
+  }
+ }
+}

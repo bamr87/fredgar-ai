@@ -6,6 +6,8 @@ from .views import (
     CompanyMetadataViewSet,
     CompanyViewSet,
     DerivedMetricViewSet,
+    EnrichmentDatasetViewSet,
+    EnrichmentRecordViewSet,
     ExternalSeriesViewSet,
     FactViewSet,
     FilingViewSet,
@@ -29,6 +31,8 @@ router.register(r"sections", SectionViewSet)
 router.register(r"tables", TableViewSet)
 router.register(r"derived-metrics", DerivedMetricViewSet)
 router.register(r"peer-groups", PeerGroupViewSet)
+router.register(r"enrichment-datasets", EnrichmentDatasetViewSet)
+router.register(r"enrichment-records", EnrichmentRecordViewSet)
 router.register(r"public-series", ExternalSeriesViewSet)
 router.register(r"public-observations", SeriesObservationViewSet)
 router.register(r"series-bundles", SeriesBundleViewSet)
