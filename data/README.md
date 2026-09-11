@@ -13,6 +13,17 @@ JSON loaded at runtime (`sec_edgar.reference_data`, `data/manifest.json`).
 | `sic_codes.json` | SEC SIC master list. |
 | `generated/us_gaap_account_map.json` | **Generated** — one entry per `us-gaap` concept: label, description, optional `acct_category`. |
 
+### Enrichment reference (`reference/enrichment/`)
+
+Loaded by `enrichment.reference` at runtime and in tests (see [`docs/enrichment.md`](../docs/enrichment.md)).
+
+| File | Role |
+|------|------|
+| `iso3166.json` | ISO 3166-1 countries (iso3, UN region/subregion, centroid, currency, ccTLD, EU/OECD) and ISO 3166-2 subdivisions. |
+| `business_registries.json` | Company register per jurisdiction with its GLEIF Registration Authority code and whether it has a free API, plus the legal-form → jurisdiction table. |
+
+A legal form is a *registration fact*: "GmbH" exists because a German, Austrian or Swiss registrar created it. That makes form-vs-country checkable offline, and tells you which register to query next.
+
 ### Accounting sources (`reference/sources/accounting/`)
 
 | File | Role |
@@ -53,3 +64,21 @@ Place large or proprietary exports here (not committed). Examples:
 - `erp-clients.csv` / `erp-clients.json` — CRM/ERP export staging
 
 The repo root `.gitignore` keeps `data/local/*` ignored except `data/local/.gitkeep`.
+
+
+## `enrichment/`
+
+Enrichment input lists and exported customer/vendor masters (see [`docs/enrichment.md`](../docs/enrichment.md)).
+
+| File | Role |
+|------|------|
+| `master_list_v2.csv` | Input: 10,982 manufacturing suppliers (name, footprint, verticals). |
+| `vendor_master_v3.csv` | Export: the golden record, with provenance and trust columns. |
+
+Rebuild the export from the database at any time:
+
+```bash
+cd src && python manage.py enrich_export --dataset manufacturing --out ../data/enrichment/vendor_master_v3.csv
+```
+
+`hard_completeness` is the column to trust — it excludes modelled values. `revenue_basis` keeps `reported` and `estimated` apart; `unverified_website` flags the most dangerous cell in the file, because it looks exactly like a good one.
