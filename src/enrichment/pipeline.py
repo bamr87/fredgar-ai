@@ -26,10 +26,12 @@ def default_registry(
 ) -> Registry:
     """The standard graph.
 
-    ``enable_search`` is off by default because it needs an external search
-    backend and is the most expensive thing here. ``enable_geocode`` is off
-    because the public Nominatim instance asks for 1 req/s and a real contact
-    address — point ``ctx.shared['nominatim']`` at your own before turning it on.
+    The switches gate *network* providers only, so an offline run still produces
+    everything that can be derived without one. ``enable_search`` is off by
+    default because it needs an external search backend and is the most expensive
+    thing here. ``enable_geocode`` is off because the public Nominatim instance
+    asks for 1 req/s and a real contact address — point ``ctx.shared['nominatim']``
+    at your own before turning it on.
     """
     reg = Registry()
 
@@ -42,6 +44,13 @@ def default_registry(
     reg.register(FredDeflator())
     reg.register(RevenueModel())
 
+    # Domain guessing is pure string work — it proposes candidates and makes no
+    # requests — so it belongs with the offline providers, not behind the web
+    # switch. Gating it on `enable_web` meant `--no-web --only domain_guess`
+    # silently did nothing at all, which is the worst way for a flag to be wrong:
+    # the run reports success and produces no claims.
+    reg.register(DomainCandidates())
+
     # Bulk: one shared index built once, then a dictionary lookup per record.
     reg.register(SelfLink())
     reg.register(EdgarIssuerMatch())
@@ -50,8 +59,8 @@ def default_registry(
     reg.register(EdgarSubmissions())
     reg.register(EdgarFacts())
 
+    # The network half.
     if enable_web:
-        reg.register(DomainCandidates())
         reg.register(SiteProbe())
     if enable_search:
         reg.register(SearchDiscovery())

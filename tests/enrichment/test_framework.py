@@ -323,3 +323,45 @@ def test_resolve_dataset_writes_golden_for_every_record_with_claims(dataset):
     stats = resolve_dataset(dataset)
     assert stats["records_resolved"] == 3
     assert EnrichmentGoldenField.objects.filter(record__dataset=dataset).count() == 3
+
+
+# ------------------------------------------------------------------ wiring --
+
+
+def test_offline_runs_still_guess_domains():
+    """`--no-web` gates the network, not offline inference.
+
+    `domain_guess` proposes candidates by string manipulation and makes no
+    requests, but it was registered behind the web switch — so
+    `--no-web --only domain_guess` reported a clean run and produced nothing.
+    A flag that silently does nothing is worse than one that errors.
+    """
+    from enrichment.pipeline import default_registry
+
+    offline = default_registry(enable_web=False)
+    assert "domain_guess" in offline.names()
+    assert "site_probe" not in offline.names()
+
+    online = default_registry(enable_web=True)
+    assert "site_probe" in online.names()
+
+
+def test_search_and_geocode_stay_off_unless_asked():
+    """Both need infrastructure the operator has to supply."""
+    from enrichment.pipeline import default_registry
+
+    assert "web_search" not in default_registry().names()
+    assert "geocode" not in default_registry().names()
+    assert "web_search" in default_registry(enable_search=True).names()
+    assert "geocode" in default_registry(enable_geocode=True).names()
+
+
+def test_every_registered_provider_declares_a_known_cost():
+    """Cost drives both scheduling order and which budget a provider draws on."""
+    from enrichment.core.provider import COST_ORDER
+    from enrichment.pipeline import default_registry
+
+    registry = default_registry(enable_search=True, enable_geocode=True)
+    for p in registry.all():
+        assert p.cost in COST_ORDER, f"{p.name} has unknown cost {p.cost!r}"
+        assert p.provides, f"{p.name} yields nothing"
