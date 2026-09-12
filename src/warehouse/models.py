@@ -454,3 +454,171 @@ class LeadershipAnalysis(models.Model):
 
     def __str__(self) -> str:
         return f"LeadershipAnalysis company={self.company_id} backend={self.backend} @ {self.created_at}"
+
+
+# --- Enrichment framework (claims -> golden record) ---
+
+
+class EnrichmentDataset(models.Model):
+    """A named list of organizations being enriched (a vendor list, a CRM export…).
+
+    Datasets are isolated: records, claims and golden fields all hang off one, so
+    a supplier extract and a prospect list can be enriched side by side without
+    their claims ever mixing.
+    """
+
+    slug = models.SlugField(max_length=64, unique=True)
+    name = models.CharField(max_length=128)
+    description = models.TextField(blank=True)
+    source_path = models.CharField(max_length=512, blank=True)  # the file it came from
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["slug"]
+
+    def __str__(self) -> str:
+        return self.slug
+
+
+class EnrichmentRecord(models.Model):
+    """One row of an input list, plus everything learned about it.
+
+    ``seed`` is what the input list said and never changes. ``fields`` is a CACHE
+    of seed plus whatever claims have been promoted, and is rebuilt from claims
+    on every load — keeping only ``fields`` was a silent correctness hole, since
+    deleting a provider's claims to re-run it left its promoted values behind, so
+    the corrected run read the very state it was meant to replace. Derived data
+    must be derived.
+    """
+
+    dataset = models.ForeignKey(
+        EnrichmentDataset, on_delete=models.CASCADE, related_name="records"
+    )
+    source_key = models.CharField(max_length=512)  # original name/id from the list
+    seed = models.JSONField(default=dict, blank=True)
+    fields = models.JSONField(default=dict, blank=True)
+    status = models.CharField(max_length=32, default="new")
+    # Set once a provider resolves the row to a warehouse issuer (e.g. by CIK),
+    # which is what joins enrichment output to filings, facts and metrics.
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="enrichment_records",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["dataset_id", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["dataset", "source_key"], name="enrichment_record_dataset_key_uniq"
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["dataset", "status"]),
+            models.Index(fields=["company"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.dataset_id}:{self.source_key[:60]}"
+
+
+class EnrichmentClaim(models.Model):
+    """One provider's assertion about one field of one record, with its evidence.
+
+    Append-only. A later run of the same provider replaces only its own row for
+    that (record, field, value), so you can re-run one source after fixing a bug
+    without losing what the others found.
+    """
+
+    record = models.ForeignKey(
+        EnrichmentRecord, on_delete=models.CASCADE, related_name="claims"
+    )
+    field = models.CharField(max_length=64, db_index=True)
+    value = models.JSONField()
+    # sha1 of the canonical JSON value: the uniqueness key, because a JSON value
+    # can be arbitrarily long and databases cannot index it directly.
+    value_hash = models.CharField(max_length=40)
+    confidence = models.FloatField()
+    provider = models.CharField(max_length=64, db_index=True)
+    # True only when a provider actively CHECKED the value rather than proposed
+    # it. A guessed domain and a domain whose homepage names the company are both
+    # 'website' claims; only one of them is verified.
+    verified = models.BooleanField(default=False)
+    ev_url = models.CharField(max_length=1024, blank=True)
+    ev_snippet = models.TextField(blank=True)
+    ev_locator = models.CharField(max_length=255, blank=True)
+    retrieved_at = models.DateTimeField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["record", "field", "value_hash", "provider"],
+                name="enrichment_claim_uniq",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["record", "field"]),
+            models.Index(fields=["field", "verified"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.provider}:{self.field}={str(self.value)[:40]}"
+
+
+class EnrichmentProviderRun(models.Model):
+    """Checkpoint of one (record, provider) attempt — what makes runs resumable."""
+
+    record = models.ForeignKey(
+        EnrichmentRecord, on_delete=models.CASCADE, related_name="provider_runs"
+    )
+    provider = models.CharField(max_length=64, db_index=True)
+    status = models.CharField(max_length=16)  # ok | empty | error | skipped
+    detail = models.CharField(max_length=300, blank=True)
+    ran_at = models.DateTimeField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["record", "provider"], name="enrichment_provider_run_uniq"
+            ),
+        ]
+        indexes = [models.Index(fields=["provider", "status"])]
+
+    def __str__(self) -> str:
+        return f"{self.provider}:{self.status} record={self.record_id}"
+
+
+class EnrichmentGoldenField(models.Model):
+    """The resolved value per field. Rebuilt from claims; never hand-edited.
+
+    ``contested=1`` marks a field where a comparable source disagreed closely —
+    a review queue rather than a false sense of accuracy.
+    """
+
+    record = models.ForeignKey(
+        EnrichmentRecord, on_delete=models.CASCADE, related_name="golden_fields"
+    )
+    field = models.CharField(max_length=64, db_index=True)
+    value = models.JSONField()
+    confidence = models.FloatField()
+    provider = models.CharField(max_length=128)
+    ev_url = models.CharField(max_length=1024, blank=True)
+    rivals = models.IntegerField(default=0)  # competing distinct values seen
+    contested = models.BooleanField(default=False)  # close call, needs a human
+    resolved_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["record", "field"], name="enrichment_golden_uniq"
+            ),
+        ]
+        indexes = [models.Index(fields=["field", "contested"])]
+
+    def __str__(self) -> str:
+        return f"{self.field}={str(self.value)[:40]} ({self.provider})"

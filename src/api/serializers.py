@@ -4,6 +4,10 @@ from public_data.models import ExternalSeries, SeriesBundle, SeriesObservation
 from warehouse.models import (
     Company,
     DerivedMetric,
+    EnrichmentClaim,
+    EnrichmentDataset,
+    EnrichmentGoldenField,
+    EnrichmentRecord,
     Fact,
     Filing,
     PeerGroup,
@@ -99,3 +103,55 @@ class SeriesBundleSerializer(serializers.ModelSerializer):
     class Meta:
         model = SeriesBundle
         fields = "__all__"
+
+
+class EnrichmentDatasetSerializer(serializers.ModelSerializer):
+    records = serializers.IntegerField(source="record_count", read_only=True)
+
+    class Meta:
+        model = EnrichmentDataset
+        fields = ["id", "slug", "name", "description", "source_path", "records", "created_at"]
+
+
+class EnrichmentGoldenFieldSerializer(serializers.ModelSerializer):
+    """One resolved value, with the evidence and the dissent behind it."""
+
+    class Meta:
+        model = EnrichmentGoldenField
+        fields = ["field", "value", "confidence", "provider", "ev_url", "rivals", "contested"]
+
+
+class EnrichmentClaimSerializer(serializers.ModelSerializer):
+    """One provider's assertion. ``verified`` separates a check from a proposal."""
+
+    class Meta:
+        model = EnrichmentClaim
+        fields = [
+            "field",
+            "value",
+            "confidence",
+            "provider",
+            "verified",
+            "ev_url",
+            "ev_snippet",
+            "ev_locator",
+            "retrieved_at",
+        ]
+
+
+class EnrichmentRecordSerializer(serializers.ModelSerializer):
+    dataset = serializers.SlugRelatedField(slug_field="slug", read_only=True)
+    golden = EnrichmentGoldenFieldSerializer(source="golden_fields", many=True, read_only=True)
+
+    class Meta:
+        model = EnrichmentRecord
+        fields = [
+            "id",
+            "dataset",
+            "source_key",
+            "seed",
+            "company",
+            "status",
+            "golden",
+            "updated_at",
+        ]

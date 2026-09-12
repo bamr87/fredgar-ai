@@ -10,6 +10,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from enrichment.services import dataset_report
 from public_data.models import ExternalSeries, SeriesBundle, SeriesObservation
 from sec_edgar.exceptions import EdgarRateLimitError, EdgarResolutionError
 from sec_edgar.services.sic_reference import (
@@ -19,6 +20,8 @@ from warehouse.models import (
     Company,
     DerivedMetric,
     EdgarEntitySyncState,
+    EnrichmentDataset,
+    EnrichmentRecord,
     Fact,
     Filing,
     FilingDocument,
@@ -36,6 +39,10 @@ from ..serializers import (
     CompanyMetadataSerializer,
     CompanySerializer,
     DerivedMetricSerializer,
+    EnrichmentClaimSerializer,
+    EnrichmentDatasetSerializer,
+    EnrichmentGoldenFieldSerializer,
+    EnrichmentRecordSerializer,
     ExternalSeriesSerializer,
     FactSerializer,
     FilingSerializer,
@@ -1047,3 +1054,70 @@ class SeriesBundleViewSet(viewsets.ReadOnlyModelViewSet):
                 "observations": data,
             }
         )
+
+
+class EnrichmentDatasetViewSet(viewsets.ReadOnlyModelViewSet):
+    """Enrichment datasets, with a coverage/trust report per dataset.
+
+    Read-only over HTTP on purpose: running providers spends SEC and search
+    budget and takes minutes, so it belongs to ``manage.py enrich_run`` (and
+    Celery), not to a request that a browser can retry.
+    """
+
+    queryset = EnrichmentDataset.objects.annotate(record_count=Count("records")).order_by("slug")
+    serializer_class = EnrichmentDatasetSerializer
+    lookup_field = "slug"
+
+    @action(detail=True, methods=["get"])
+    def report(self, request, slug=None):
+        """Coverage, validation tiers and per-provider outcomes for this dataset."""
+        return Response(dataset_report(self.get_object()))
+
+
+class EnrichmentRecordViewSet(viewsets.ReadOnlyModelViewSet):
+    """Enriched party records: the resolved golden values, and the claims behind them.
+
+    ``/evidence/`` is the endpoint that makes this data usable — "why does it say
+    that?" is answerable for every field, which is the entire reason providers
+    emit claims instead of writing values.
+    """
+
+    queryset = (
+        EnrichmentRecord.objects.select_related("dataset", "company")
+        .prefetch_related("golden_fields")
+        .order_by("pk")
+    )
+    serializer_class = EnrichmentRecordSerializer
+    filterset_fields = ["dataset__slug", "status", "company"]
+    search_fields = ["source_key"]
+
+    @action(detail=True, methods=["get"])
+    def evidence(self, request, pk=None):
+        """Every claim for this record, with its provider, confidence and source."""
+        record = self.get_object()
+        return Response(
+            {
+                "record_id": record.pk,
+                "source_key": record.source_key,
+                "company": record.company_id,
+                "claims": EnrichmentClaimSerializer(
+                    record.claims.all().order_by("field", "-verified", "-confidence"), many=True
+                ).data,
+                "golden": EnrichmentGoldenFieldSerializer(
+                    record.golden_fields.all().order_by("field"), many=True
+                ).data,
+                "provider_runs": list(
+                    record.provider_runs.values("provider", "status", "detail", "ran_at")
+                ),
+            }
+        )
+
+    @action(detail=False, methods=["get"])
+    def contested(self, request):
+        """The review queue: records where comparable sources disagreed closely."""
+        qs = self.filter_queryset(self.get_queryset()).filter(golden_fields__contested=True)
+        page = self.paginate_queryset(qs.distinct())
+        serializer = self.get_serializer(page if page is not None else qs, many=True)
+        if page is not None:
+            return self.get_paginated_response(serializer.data)
+        return Response(serializer.data)

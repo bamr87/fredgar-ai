@@ -33,6 +33,8 @@ Registered with `DefaultRouter` (list/create/detail patterns apply where the vie
 | `/public-series/` | Read-only | External series catalog. |
 | `/public-observations/` | Read-only | Series observations. |
 | `/series-bundles/` | `SeriesBundleViewSet` | Bundles by `slug`; nested observations action. |
+| `/enrichment-datasets/` | `EnrichmentDatasetViewSet` | Read-only, by `slug`; coverage report action. |
+| `/enrichment-records/` | `EnrichmentRecordViewSet` | Read-only enriched party records with resolved values. Filter: `dataset__slug`, `status`, `company`. Search on `source_key`. |
 
 ### Custom actions (`companies`)
 
@@ -69,6 +71,9 @@ Registered with `DefaultRouter` (list/create/detail patterns apply where the vie
 | GET | `/api/v1/facts/facets/?company=` | Per-company fact aggregates (taxonomy, top concepts, years). |
 | GET | `/api/v1/peer-groups/{id}/analytics/peer-fact-compare/?concept=&taxonomy=` | Compare concept across peer group. |
 | GET | `/api/v1/series-bundles/{slug}/observations/?limit=` | Bundle observations snapshot. |
+| GET | `/api/v1/enrichment-datasets/{slug}/report/` | Coverage, validation tiers and per-provider outcomes for a dataset. |
+| GET | `/api/v1/enrichment-records/{id}/evidence/` | Every claim behind a record: provider, confidence, verified flag, source URL. |
+| GET | `/api/v1/enrichment-records/contested/` | The review queue — records where comparable sources disagreed closely. |
 
 Interactive exploration: open `/api/v1/` in a browser with Django staff session if browsable API is enabled.
 
@@ -115,6 +120,21 @@ python manage.py <command> [options]
 | `sync_leadership` | Extract officers/directors/owners from SEC Forms 3/4/5 (`--ticker`/`--cik`, `--limit`). |
 | `compute_stakeholder_assessment` | Compute the transparent people-vs-profits orientation index (`--ticker`/`--cik`/`--all`). |
 | `analyze_leadership` | Gated LLM narrative analysis of leadership from SEC filing text (`--ticker`/`--cik`/`--all`, `--no-persist`; needs `ENABLE_AI_ANALYSIS` + `requirements-ai.txt`). |
+
+### `enrichment`
+
+The enrichment pipeline is CLI-only by design: running providers spends SEC and search budget and takes minutes, so it does not belong in a request. See [`enrichment.md`](enrichment.md).
+
+| Command | Purpose |
+|---------|---------|
+| `enrich_init` | Load a CSV list into a dataset (`--dataset`, `--csv`, `--mapping manufacturing_v1\|master_list_v2\|custom`). |
+| `enrich_plan` | Print the provider wave order and worst-case network cost, before spending anything. |
+| `enrich_run` | Iterate the dataset through the provider graph. Resumable. `--only`, `--refresh` (drop a provider's claims so it genuinely re-runs), `--limit`, `--no-web`, `--search`, `--max-fetch/--max-search/--max-api`. |
+| `enrich_resolve` | Rebuild the golden record from current claims (precedence beats confidence). |
+| `enrich_link` | Attach records to warehouse `Company` rows via their **verified** CIK (`--no-create`). |
+| `enrich_export` | Write the customer/vendor master CSV (`--out`). |
+| `enrich_report` | Coverage, trust distribution and per-provider outcomes (`--json`; omit `--dataset` to list datasets). |
+| `enrich_evidence` | Why does this record say that? Every claim with its source (`--name`). |
 
 ### `public_data`
 
