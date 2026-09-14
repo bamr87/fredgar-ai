@@ -1,8 +1,10 @@
 /** Company-360 consolidated overview from GET /companies/:id/profile/. */
 import { useProfile, useTimeseries } from '../../lib/queries'
-import { byUnit, date, humanize, money } from '../../lib/format'
+import { date, fullPrecision, humanize, money } from '../../lib/format'
+import { formatDerivedMetric } from '../../lib/finance'
 import { Card, CardHeader, EmptyState, Provenance, Query } from '../../components/ui'
 import { TrendChart } from '../../components/ui/Chart'
+import { KpiHighlights } from './KpiHighlights'
 
 const REVENUE_CHAIN = ['RevenueFromContractWithCustomerExcludingAssessedTax', 'Revenues', 'SalesRevenueNet', 'RevenueFromContractWithCustomerIncludingAssessedTax']
 
@@ -22,6 +24,7 @@ export function OverviewTab({ id }: { id: number }) {
   const profile = useProfile(id)
   return (
     <div className="col gap-4">
+      <KpiHighlights id={id} />
       <RevenueTrend id={id} />
       <Query q={profile}>
       {(p) => {
@@ -62,7 +65,7 @@ export function OverviewTab({ id }: { id: number }) {
                   {metrics.map(([key, m]) => (
                     <div key={key} className="stat" style={{ padding: 'var(--sp-2)' }}>
                       <div className="stat-label">{humanize(key)}</div>
-                      <div className="stat-value" style={{ fontSize: 'var(--fs-xl)' }}>{byUnit(m.value, m.unit)}</div>
+                      <div className="stat-value" style={{ fontSize: 'var(--fs-xl)' }} title={fullPrecision(m.value, m.unit) || undefined}>{formatDerivedMetric(key, m.value, m.unit)}</div>
                       {m.period_end && <div className="stat-sub">FY {m.period_end.slice(0, 4)}</div>}
                     </div>
                   ))}

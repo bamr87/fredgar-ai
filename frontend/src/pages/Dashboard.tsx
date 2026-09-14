@@ -1,7 +1,7 @@
 /** Landing page: coverage overview, market snapshot, recent companies, entry points. */
 import { Link, useNavigate } from 'react-router-dom'
-import { useBundleObservations, useFacets } from '../lib/queries'
-import { compact, fullNum, signed } from '../lib/format'
+import { useBundleObservations, useFacets, usePrefetchCompany } from '../lib/queries'
+import { cik10, compact, fullNum, signed } from '../lib/format'
 import { applyRange, changeOver, seriesPoints } from '../lib/macro'
 import { useRecentCompanies } from '../lib/recent'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
@@ -30,6 +30,7 @@ export function Dashboard() {
   const facets = useFacets()
   const navigate = useNavigate()
   const recent = useRecentCompanies()
+  const prefetch = usePrefetchCompany()
   useDocumentTitle('Dashboard')
 
   return (
@@ -48,16 +49,24 @@ export function Dashboard() {
         </div>
       </Card>
 
-      {/* Recently viewed */}
       {recent.length > 0 && (
-        <div className="row gap-2 wrap mt-4" style={{ alignItems: 'center' }}>
-          <span className="caption">Recently viewed:</span>
-          {recent.map((c) => (
-            <Link key={c.id} to={`/companies/${c.id}`} className="badge" style={{ cursor: 'pointer' }}>
-              {c.ticker ? <strong>{c.ticker}</strong> : c.name.slice(0, 18)}
-            </Link>
-          ))}
-        </div>
+        <Card className="mt-4">
+          <CardHeader title="Recently viewed" sub="Companies opened on this device" />
+          <div className="card-body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(14rem, 1fr))', gap: 'var(--sp-2)' }}>
+            {recent.map((c) => (
+              <Link
+                key={c.id}
+                to={`/companies/${c.id}`}
+                className="card card-hover card-pad"
+                style={{ textDecoration: 'none', color: 'inherit' }}
+                onMouseEnter={() => prefetch(c.id)}
+              >
+                <div style={{ fontWeight: 650 }} className="truncate">{c.name}</div>
+                <div className="caption">{c.ticker || '—'} · CIK {cik10(c.cik)}</div>
+              </Link>
+            ))}
+          </div>
+        </Card>
       )}
 
       {/* Coverage stats */}
