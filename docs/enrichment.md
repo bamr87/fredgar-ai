@@ -187,3 +187,5 @@ class CompaniesHouse(BaseProvider):
 ```
 
 Register it in [`pipeline.py`](../src/enrichment/pipeline.py) and `enrich_plan` immediately shows where it lands in the wave order. Every record already carries `registry_name`, `registry_url`, `registry_ra` and `registry_free_api`, so the offline `jurisdiction` provider has already told you which register to write next.
+
+**Bonus (not built):** inbound Kaggle datasets as providers — identify → versioned extract → claims — so industry taxonomies, market membership, and non-US economy series can fill gaps without outranking EDGAR. See [distributed-storage.md](distributed-storage.md#bonus-kaggle-inbound--identify-extract-enrich).
