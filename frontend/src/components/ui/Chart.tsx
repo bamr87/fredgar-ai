@@ -155,7 +155,7 @@ export function MultiLineChart({
   )
 }
 
-export function Sparkline({ data, color = 'var(--c-accent)', height = 40, width = '100%' }: { data: Point[]; color?: string; height?: number; width?: number | string }) {
+export function Sparkline({ data, color = 'var(--c-accent)', height = 40, width = '100%' }: { data: Point[]; color?: string; height?: number; width?: number | `${number}%` }) {
   return (
     <ResponsiveContainer width={width} height={height}>
       <LineChart data={data} margin={{ top: 4, right: 2, left: 2, bottom: 2 }}>
