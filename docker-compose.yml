@@ -1,13 +1,13 @@
 services:
   db:
-    image: postgres:15
+    image: postgres:18
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-fredgar}
       # Override in production via a .env next to this file or the shell environment.
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fredgar}
       POSTGRES_DB: ${POSTGRES_DB:-fredgar}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U fredgar -d fredgar"]
       interval: 5s
@@ -20,14 +20,14 @@ services:
       dockerfile: Dockerfile
       target: runtime
     ports:
-      - "8000:8000"
+      - "127.0.0.1:${FREDGAR_API_PORT:-8000}:8000"
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-fredgar}:${POSTGRES_PASSWORD:-fredgar}@db:5432/${POSTGRES_DB:-fredgar}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-dev-secret-key}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-true}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-*}
       # Include common Vite ports if dev server picks an alternate (e.g. 5174 when 5173 is taken)
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175,http://localhost:8080,http://127.0.0.1:8080}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:${FREDGAR_FRONTEND_PORT:-5173},http://127.0.0.1:${FREDGAR_FRONTEND_PORT:-5173},http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175,http://localhost:${FREDGAR_FRONTEND_PROD_PORT:-8080},http://127.0.0.1:${FREDGAR_FRONTEND_PROD_PORT:-8080}}
       USER_AGENT_EMAIL: ${USER_AGENT_EMAIL:-}
       EDGAR_DATA_DIR: /app/data
       CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
@@ -55,7 +55,7 @@ services:
       start_period: 40s
 
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -93,7 +93,7 @@ services:
       - tika
     image: apache/tika:2.9.2.1
     ports:
-      - "9998:9998"
+      - "127.0.0.1:${FREDGAR_TIKA_PORT:-9998}:9998"
 
   test:
     profiles:
@@ -123,12 +123,12 @@ services:
   frontend:
     profiles:
       - dev
-    image: node:22-bookworm-slim
+    image: node:24-trixie-slim
     working_dir: /app
     volumes:
       - ./frontend:/app
     ports:
-      - "5173:5173"
+      - "127.0.0.1:${FREDGAR_FRONTEND_PORT:-5173}:5173"
     env_file:
       - ./frontend/.env.docker
     command:
@@ -144,7 +144,7 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
     ports:
-      - "8080:80"
+      - "127.0.0.1:${FREDGAR_FRONTEND_PROD_PORT:-8080}:80"
     depends_on:
       - web
 
