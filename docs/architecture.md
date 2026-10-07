@@ -41,10 +41,12 @@ flowchart TB
 
 **DB-first SEC JSON:** [`EdgarSecPayload`](../src/warehouse/models.py) holds raw submissions and companyfacts blobs keyed by CIK so repeated reads and bulk jobs can avoid redundant live SEC calls. Sync commands and the API respect this cache where configured; use flags such as `force_refresh` or command-line equivalents when you need to bypass it.
 
+**Proposed next step:** a distributed extract store (raw bytes content-addressed on local/S3, normalized warehouse, clean Kaggle + local `.tar.zst` snapshots) so pulls only retrieve *new or updated* source data. See [distributed-storage.md](distributed-storage.md).
+
 ## CRM pipeline (optional)
 
 CRM JSON loads into `CrmCompanyRecord`. Title matching links rows to SEC issuers; sync commands can then pull submissions/facts for matched companies. See [api-and-cli.md](api-and-cli.md) for command names.
 
 ## Macro data (FRED)
 
-`SeriesBundle` groups `ExternalSeries` IDs. `load_series_bundle` registers definitions; `sync_series_bundle` pulls observations when `FRED_API_KEY` is set.
+`SeriesBundle` groups `ExternalSeries` IDs. `load_series_bundle` registers definitions; `sync_series_bundle` pulls observations when `FRED_API_KEY` is set. Incremental FRED pulls today use a sliding `days_back` window; the [extract-store spec](distributed-storage.md) replaces that with a `last_updated` + last-observation cursor so unchanged series are not re-fetched.

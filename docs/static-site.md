@@ -9,7 +9,7 @@ Fredgar AI ships two front ends over the same warehouse:
 | **Freshness** | Live (on-demand SEC/FRED syncs) | Rebuilt on a schedule (weekly + manual) |
 | **Hosting** | Docker / nginx (see `docker-compose.yml`) | **GitHub Pages** |
 
-Both are rendered from the same services (`build_company_context` reuses the profile/statements/analytics code), so the mirror shows exactly what the API does.
+Both are rendered from the same services (`build_company_context` reuses the profile/statements/analytics code), so the mirror shows exactly what the API does. The proposed [extract store](distributed-storage.md) sits behind both as a shared cache: Pages still builds offline from the Release warehouse; only the interactive backend (and `refresh-data.yml`) may pull new EDGAR/FRED bytes.
 
 ## What gets published
 

@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { byUnit, cik10, cikInt, compact, humanize, money, pct, signed } from './format'
+import {
+  byUnit,
+  cik10,
+  cikInt,
+  compact,
+  fullPrecision,
+  humanize,
+  measureLabel,
+  money,
+  pct,
+  signed,
+  signedPctPoints,
+} from './format'
 
 describe('compact', () => {
   it('compacts large numbers', () => {
@@ -32,6 +44,33 @@ describe('byUnit', () => {
     expect(byUnit(0.4, 'ratio')).toBe('0.40')
     expect(byUnit(0.4, 'pct')).toBe('40.0%')
     expect(byUnit(1_000_000, 'USD')).toBe('$1.00M')
+    expect(byUnit(6.42, 'USD/shares')).toBe('$6.42')
+    expect(byUnit(1500, 'USD/shares')).toBe('$1500.00')
+  })
+})
+
+describe('fullPrecision', () => {
+  it('shows uncompacted currency', () => {
+    const usd = fullPrecision(391_035_000_000, 'USD')
+    expect(usd).toMatch(/391/)
+    expect(usd).not.toMatch(/[TBMK]/)
+    expect(fullPrecision(6.42, 'USD/shares')).toMatch(/6\.42/)
+  })
+})
+
+describe('measureLabel', () => {
+  it('normalizes unit tags', () => {
+    expect(measureLabel('usd/shares')).toBe('USD/share')
+    expect(measureLabel('USD')).toBe('USD')
+    expect(measureLabel('ratio')).toBe('')
+  })
+})
+
+describe('signedPctPoints', () => {
+  it('prefixes a sign on percent-point values', () => {
+    expect(signedPctPoints(2)).toBe('+2.0%')
+    expect(signedPctPoints(-1.4)).toBe('-1.4%')
+    expect(signedPctPoints(null)).toBe('—')
   })
 })
 

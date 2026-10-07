@@ -25,9 +25,9 @@ Copy [`frontend/.env.example`](.env.example) if you need a template.
 
 | Path | Screen |
 |------|--------|
-| `/` | Dashboard (`Dashboard`) — company search, coverage facets, quick links, industry/HQ breakdowns |
+| `/` | Dashboard (`Dashboard`) — company search, recently viewed companies, coverage facets, quick links, industry/HQ breakdowns |
 | `/companies` | Company explorer table (`CompanyExplorer`) |
-| `/companies/:id` | Single company detail (`CompanyDetail`) — overview, financials, filings, facts, leadership tabs |
+| `/companies/:id` | Single company detail (`CompanyDetail`) — overview, financials, filings, facts, leadership tabs; Overview and Financials open with a financial-highlights card (latest XBRL facts, compact values with full precision on hover, derived margins and debt/equity), and the Financials trend has a period-over-period change table |
 | `/search` | Full-text filing search (`FilingSearch`) |
 | `/compare` | Cohort comparison (`Compare`) |
 | `/peers` | Peer groups (`PeerGroups`) |
@@ -40,6 +40,7 @@ Copy [`frontend/.env.example`](.env.example) if you need a template.
 - [`src/App.tsx`](src/App.tsx) — route table (lazy-loaded pages)
 - [`src/layout/AppShell.tsx`](src/layout/AppShell.tsx) — sidebar nav, global search, theme toggle, backend-readiness indicator
 - [`src/lib/api.ts`](src/lib/api.ts) — typed fetch helpers for `/api/v1/`; [`src/lib/http.ts`](src/lib/http.ts) — base fetch, auth token + SEC email headers
+- [`src/lib/format.ts`](src/lib/format.ts) — display formatters (compact money, per-share, full-precision tooltips, unit labels); [`src/lib/finance.ts`](src/lib/finance.ts) — KPI concept chains, client-side margins/ratios, period-over-period change
 - [`src/pages/`](src/pages/) — one module per route (e.g. `Dashboard.tsx`, `CompanyExplorer.tsx`, `CompanyDetail.tsx`), with company detail tabs under [`src/pages/company/`](src/pages/company/)
 
 Project-wide docs: [../docs/README.md](../docs/README.md), [../README.md](../README.md).

@@ -33,15 +33,61 @@ export function fullNum(v: number | string | null | undefined): string {
   return n.toLocaleString(undefined, { maximumFractionDigits: 2 })
 }
 
-/** Format a value using a unit hint (ratio / pct / usd / shares). */
+/** Format a value using a unit hint (ratio / pct / usd / shares / EPS). */
 export function byUnit(v: number | string | null | undefined, unit: string | null | undefined): string {
   const n = num(v)
   if (n === null) return '—'
   const u = (unit || '').toLowerCase()
   if (u === 'ratio') return n.toFixed(2)
   if (u === 'pct' || u === 'percent') return pct(n)
+  if (u === 'usd/shares' || u.includes('/share')) {
+    const sign = n < 0 ? '-' : ''
+    return `${sign}$${Math.abs(n).toFixed(2)}`
+  }
   if (u === 'usd' || u.includes('usd')) return money(n)
   return compact(n)
+}
+
+/** Full-precision label for hover tooltips (no compact suffixes). */
+export function fullPrecision(v: number | string | null | undefined, unit?: string | null): string {
+  const n = num(v)
+  if (n === null) return ''
+  const u = (unit || '').toLowerCase()
+  if (u === 'usd/shares' || u.includes('/share')) {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 4,
+    }).format(n)
+  }
+  if (u === 'usd' || u.includes('usd')) {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0,
+    }).format(n)
+  }
+  return n.toLocaleString(undefined, { maximumFractionDigits: 4 })
+}
+
+/** Human-readable unit tag (USD, USD/share). */
+export function measureLabel(unit: string | null | undefined): string {
+  if (!unit) return ''
+  const u = unit.toLowerCase()
+  if (u === 'usd/shares' || u.includes('/share')) return 'USD/share'
+  if (u === 'usd' || u.includes('usd')) return 'USD'
+  if (u === 'shares') return 'shares'
+  if (u === 'pure' || u === 'number' || u === 'ratio' || u === 'pct' || u === 'percent') return ''
+  return unit
+}
+
+/** Signed percent-points string: +2.0% / -1.4%. Input is already in percent units. */
+export function signedPctPoints(v: number | null | undefined, digits = 1): string {
+  const n = num(v)
+  if (n === null) return '—'
+  const sign = n > 0 ? '+' : ''
+  return `${sign}${n.toFixed(digits)}%`
 }
 
 export function pct(v: number | null | undefined, digits = 1): string {

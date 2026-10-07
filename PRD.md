@@ -23,6 +23,8 @@ This PRD describes **Fredgar AI** (FRED + EDGAR, with AI; repository: **fredgar-
 | 1.0 | 2025-08-19 | Initial draft (AI-centric analyzer concept). |
 | 1.1 | 2025-08-19 | User stories added. |
 | 2.0 | 2026-03-28 | Aligned with implemented stack; removed duplicate sections; added implementation status and roadmap split. |
+| 2.1 | 2026-09-20 | Distributed extract storage spec (incremental EDGAR/FRED cache, Kaggle + local clean snapshots). |
+| 2.2 | 2026-09-20 | Bonus: Kaggle inbound identify/extract/enrich for companies, industries, markets, economies. |
 
 ### 1.4 Stakeholders
 
@@ -122,6 +124,8 @@ The market for financial data and filing analysis is crowded (aggregators, termi
 - AI chat over retrieved facts and text (with citations).
 - Collaboration (annotations, team sharing).
 - Third-party enrichments (prices, news) behind explicit scope decisions.
+- **Distributed extract storage** (spec: [`docs/distributed-storage.md`](docs/distributed-storage.md)): content-addressed raw EDGAR/FRED cache, revalidate-not-refetch pulls, local compressed backup, Kaggle clean snapshots.
+- **Bonus — Kaggle inbound enrichment** (same spec): identify allowlisted public datasets, extract only new versions, enrich companies / industries / markets / economies as claims. EDGAR remains the identity and reported-financials source; Kaggle fills gaps (taxonomies, non-US macro, index membership) with provenance. Exercise, not MVP. Interactive app only at runtime; GitHub Pages gets the baked warehouse.
 
 ### 4.4 User flows (representative)
 

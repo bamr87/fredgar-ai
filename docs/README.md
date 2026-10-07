@@ -7,6 +7,7 @@ Start with the [root README](../README.md) for environment setup, Docker, and te
 ## Architecture and API
 
 - **[architecture.md](architecture.md)** — Django apps, data flow from SEC to the warehouse, DB-first JSON caching. For backend developers and operators.
+- **[distributed-storage.md](distributed-storage.md)** — Spec (proposed) for content-addressed EDGAR/FRED extracts: incremental pulls only for new/updated raw bytes, local compressed backup, Kaggle clean snapshots.
 - **[api-and-cli.md](api-and-cli.md)** — REST base paths, main resources and custom actions, and all Django management commands with short examples. For integrators and maintainers.
 - **[leadership-methodology.md](leadership-methodology.md)** — How leadership is extracted (SEC Forms 3/4/5) and how the transparent "stakeholder orientation" (people-vs-profits) index is computed, with limitations and responsible-use notes. **Read before relying on those outputs.**
 - **[static-site.md](static-site.md)** — The public static mirror: what gets generated, the `publish_static_site` pipeline, GitHub Pages deployment/setup, and cross-links between the mirror and the interactive app.

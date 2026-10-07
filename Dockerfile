@@ -1,6 +1,6 @@
 # API server (run from repo root: docker build -t fredgar-ai .)
 # Stages: base -> test (CI image) -> runtime (default for compose web)
-FROM python:3.12-slim-bookworm AS base
+FROM python:3.14-slim-trixie AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
