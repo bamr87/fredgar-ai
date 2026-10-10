@@ -9,6 +9,6 @@ freezegun>=1.5.5
 
 # Type checking (advisory) + hooks + audit
 mypy>=2.4.0,<2.5  # capped: django-stubs[compatible-mypy] requires mypy<2.2
-django-stubs[compatible-mypy]>=6.1.1
+django-stubs[compatible-mypy]>=6.1.2
 pre-commit>=4.6.2
 pip-audit>=2.10.1

@@ -5,8 +5,8 @@
 #   pip-compile --upgrade-package <name> requirements.in
 
 # Web / API stack
-django>=6.1.1,<7
-djangorestframework>=3.18.1
+django>=6.1.2,<7
+djangorestframework>=3.18.3
 django-filter>=26.2
 dj-database-url>=2.2
 psycopg2-binary>=2.9.13
@@ -17,7 +17,7 @@ sentry-sdk>=2.71.0
 
 # SEC client + HTM/HTML parsing
 requests>=2.31
-tenacity>=8.2
+tenacity>=9.2.1
 beautifulsoup4>=4.12
 lxml>=6.1.3          # BeautifulSoup parser backend (src/sec_edgar/parsers/htm.py)
 
