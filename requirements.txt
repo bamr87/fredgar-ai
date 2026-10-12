@@ -42,7 +42,7 @@ click-repl==0.3.0
     # via celery
 dj-database-url==3.1.2
     # via -r requirements.in
-django==6.1.1
+django==6.1.2
     # via
     #   -r requirements.in
     #   dj-database-url
@@ -54,7 +54,7 @@ django-cors-headers==4.9.0
     # via -r requirements.in
 django-filter==26.2
     # via -r requirements.in
-djangorestframework==3.18.1
+djangorestframework==3.18.3
     # via
     #   -r requirements.in
     #   drf-spectacular
@@ -108,7 +108,7 @@ soupsieve==2.9.2
     # via beautifulsoup4
 sqlparse==0.6.0
     # via django
-tenacity==9.1.4
+tenacity==9.2.1
     # via -r requirements.in
 tika==3.3.2
     # via -r requirements.in
