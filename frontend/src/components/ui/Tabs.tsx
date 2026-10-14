@@ -10,7 +10,7 @@ export function Tabs({ tabs, value, onChange }: { tabs: TabDef[]; value: string;
   // WAI-ARIA tabs keyboard pattern: arrows move + activate, Home/End jump.
   function onKey(e: KeyboardEvent<HTMLDivElement>) {
     if (tabs.length === 0) return
-    let next = idx
+    let next: number
     if (e.key === 'ArrowRight') next = (idx + 1) % tabs.length
     else if (e.key === 'ArrowLeft') next = (idx - 1 + tabs.length) % tabs.length
     else if (e.key === 'Home') next = 0
