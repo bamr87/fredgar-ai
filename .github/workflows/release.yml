@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   release:
-    uses: bamr87/.github/.github/workflows/release-please.yml@main
+    uses: bamr87/.github/.github/workflows/release-please.yml@209e536d2b86d4a7197a1ade499b8655ebc6acc1  # bamr87/.github main 2026-10-04 (no tags yet)
     permissions:
       contents: write
       pull-requests: write
@@ -25,7 +25,7 @@ jobs:
   publish:
     needs: release
     if: needs.release.outputs.release_created == 'true'
-    uses: bamr87/.github/.github/workflows/publish.yml@main
+    uses: bamr87/.github/.github/workflows/publish.yml@209e536d2b86d4a7197a1ade499b8655ebc6acc1  # bamr87/.github main 2026-10-04 (no tags yet)
     with:
       tag: ${{ needs.release.outputs.tag_name }}
       version: ${{ needs.release.outputs.version }}
