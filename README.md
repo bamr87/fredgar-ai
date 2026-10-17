@@ -1,6 +1,20 @@
 # Fredgar AI
 
+> Django + React app for exploring SEC EDGAR company data and FRED macro series, with AI-assisted summaries.
+
+[![CI](https://github.com/bamr87/fredgar-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/bamr87/fredgar-ai/actions/workflows/ci.yml) [![License](https://img.shields.io/github/license/bamr87/fredgar-ai)](LICENSE) [![Live site](https://img.shields.io/badge/live-bamr87.github.io%2Ffredgar--ai-2ea44f)](https://bamr87.github.io/fredgar-ai/)
+
+## Overview
+
 **Fredgar AI** (FRED + EDGAR, with AI) is a Django + Django REST Framework backend with a Vite/React UI for **SEC EDGAR** company data and optional **FRED** macro series, with AI-assisted interpretation and summaries.
+
+## Features
+
+- SEC EDGAR company data through direct SEC APIs (`sec_edgar` app)
+- Optional FRED macro series (`public_data` app, needs `FRED_API_KEY`)
+- Versioned REST API at `/api/v1/` built with Django REST Framework
+- React + TypeScript (Vite) frontend in `frontend/`
+- AI-assisted interpretation and summaries of the data
 
 ## Stack
 
@@ -77,8 +91,7 @@ cd src
 python manage.py ingest_htm --url 'https://www.sec.gov/Archives/.../file.htm' --ticker AAPL
 ```
 
-## Project layout
-
+## Project structure
 - [`src/config/`](src/config/) — Django settings and URLs
 - [`src/warehouse/`](src/warehouse/) — `Company`, `Filing`, `Fact`, `DerivedMetric`, peers
 - [`src/sec_edgar/`](src/sec_edgar/) — SEC client, HTM parser, ingest + sync services
@@ -141,3 +154,20 @@ GitHub Actions: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs Ruff
 - **[`docs/api-and-cli.md`](docs/api-and-cli.md)** — REST routes and `manage.py` commands.
 - **[`docs/sec-reference/`](docs/sec-reference/)** — SEC API and PDS context (external behavior).
 - **[`PRD.md`](PRD.md)** — Product vision and roadmap (see banner there for scope vs code).
+
+## Contributing
+
+Contributions are welcome via pull request. Use [Conventional Commits](https://www.conventionalcommits.org/) and keep the CI checks green. See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow. AI agents should start with [CLAUDE.md](CLAUDE.md).
+
+## Changelog
+
+Notable changes are recorded in [CHANGELOG.md](CHANGELOG.md). Tagged versions are on the [releases page](https://github.com/bamr87/fredgar-ai/releases).
+
+## License
+
+Released under the [MIT License](LICENSE).
+
+---
+
+<!-- bamr87-portfolio-footer -->
+<sub>Part of the [bamr87 portfolio](https://github.com/bamr87) — browse every project on [Amr's GitHub profile](https://github.com/bamr87).</sub>
