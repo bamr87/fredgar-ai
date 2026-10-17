@@ -13,7 +13,7 @@ psycopg2-binary>=2.9.13
 django-cors-headers>=4.3
 drf-spectacular>=0.30.0          # OpenAPI 3 schema + Swagger/Redoc docs
 gunicorn>=26.2.0
-sentry-sdk>=2.71.0
+sentry-sdk>=2.72.0
 
 # SEC client + HTM/HTML parsing
 requests>=2.31
