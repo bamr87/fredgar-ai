@@ -48,7 +48,7 @@ grants, and tax withholding — not just open-market conviction buys. A refineme
 
 Narrative extraction — leadership **initiatives**, **verbatim quotes**, and **stated forward direction** — runs through a pluggable analyzer with **Claude as the default provider** (`ENABLE_AI_ANALYSIS=true`). It stays **purely additive**: it degrades to a no-op unless the optional `anthropic` SDK *and* a credential are present, so the structured, source-cited signal above is always the default output and a credential-less checkout makes no API calls.
 
-**How it stays grounded.** When enabled, the analyzer (`AnthropicAnalyzer`, default model `claude-opus-4-8`) is sent *only* excerpts from this company's already-ingested SEC filing text, each labeled `[S1]`, `[S2]`, …, and is constrained by a strict system prompt to:
+**How it stays grounded.** When enabled, the analyzer (`AnthropicAnalyzer`, default model `claude-opus-5-5`) is sent *only* excerpts from this company's already-ingested SEC filing text, each labeled `[S1]`, `[S2]`, …, and is constrained by a strict system prompt to:
 
 1. Ground every item in the excerpts and cite the source label.
 2. Reproduce quotes **verbatim** — never invent, paraphrase, or reconstruct a quote; if no
@@ -66,7 +66,7 @@ pip install -r requirements-ai.txt                    # installs the optional `a
 export CLAUDE_CODE_OAUTH_TOKEN=$(claude setup-token)  # preferred: Claude Code OAuth token
 # or, instead of the token:
 # export ANTHROPIC_API_KEY=sk-...                     # fallback: metered API key
-# ENABLE_AI_ANALYSIS defaults to true; AI_ANALYSIS_MODEL defaults to claude-opus-4-8
+# ENABLE_AI_ANALYSIS defaults to true; AI_ANALYSIS_MODEL defaults to claude-opus-5-5
 ```
 
 This is narrative extraction with citations, **not** an opinion about people, and not investment/HR advice. Always verify quotes and initiatives against the cited filings.

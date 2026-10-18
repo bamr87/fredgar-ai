@@ -139,7 +139,7 @@ def test_gather_passages_falls_back_to_filing_documents():
 # --- enabled analysis with an injected client ---
 
 
-@override_settings(ENABLE_AI_ANALYSIS=True, AI_ANALYSIS_MODEL="claude-opus-4-8")
+@override_settings(ENABLE_AI_ANALYSIS=True, AI_ANALYSIS_MODEL="claude-opus-5-5")
 @pytest.mark.django_db
 def test_analyze_with_injected_client_persists_and_grounds():
     co = _company_with_text()
@@ -156,7 +156,7 @@ def test_analyze_with_injected_client_persists_and_grounds():
     # The request was grounded: system prompt + the filing excerpt were sent, with
     # structured-output + adaptive thinking configured.
     call = fake.calls
-    assert call["model"] == "claude-opus-4-8"
+    assert call["model"] == "claude-opus-5-5"
     assert call["thinking"] == {"type": "adaptive"}
     assert call["output_config"]["format"]["type"] == "json_schema"
     assert "verbatim" in call["system"].lower()
@@ -166,7 +166,7 @@ def test_analyze_with_injected_client_persists_and_grounds():
     row = LeadershipAnalysis.objects.get(company=co)
     assert row.enabled is True
     assert row.summary == PAYLOAD["summary"]
-    assert row.model_name == "claude-opus-4-8"
+    assert row.model_name == "claude-opus-5-5"
 
 
 @override_settings(ENABLE_AI_ANALYSIS=True, AI_ANALYSIS_API_KEY="test-key")
@@ -294,7 +294,7 @@ def test_analyze_and_fetch_via_api(admin_client, monkeypatch):
     class _Stub:
         enabled = True
         backend = "anthropic"
-        model_name = "claude-opus-4-8"
+        model_name = "claude-opus-5-5"
 
         def analyze(self, name, passages):
             return PAYLOAD

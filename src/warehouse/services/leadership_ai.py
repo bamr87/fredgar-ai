@@ -137,7 +137,7 @@ class AnthropicAnalyzer:
 
     def __init__(self, *, client: Any | None = None, model: str | None = None) -> None:
         self.model_name: str = str(
-            model or getattr(settings, "AI_ANALYSIS_MODEL", None) or "claude-opus-4-8"
+            model or getattr(settings, "AI_ANALYSIS_MODEL", None) or "claude-opus-5-5"
         )
         self._client = client
 
