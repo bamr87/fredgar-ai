@@ -2,7 +2,7 @@
 pytest>=9.1.1
 pytest-django>=4.14.0
 pytest-cov>=7.1.0
-ruff>=0.16.10
+ruff>=0.17.0
 responses>=0.26.3
 factory-boy>=3.3.3
 freezegun>=1.5.5
@@ -10,5 +10,5 @@ freezegun>=1.5.5
 # Type checking (advisory) + hooks + audit
 mypy>=2.4.0,<2.5  # capped: django-stubs[compatible-mypy] requires mypy<2.2
 django-stubs[compatible-mypy]>=6.1.2
-pre-commit>=4.6.2
+pre-commit>=4.7.0
 pip-audit>=2.10.1
