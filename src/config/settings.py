@@ -233,7 +233,7 @@ EMBEDDINGS_BACKEND = os.getenv('EMBEDDINGS_BACKEND', 'none')  # none | local | a
 # required for the core runtime. Output is grounded in SEC filing excerpts only.
 ENABLE_AI_ANALYSIS = _env_bool('ENABLE_AI_ANALYSIS', True)
 AI_ANALYSIS_BACKEND = os.getenv('AI_ANALYSIS_BACKEND', 'anthropic')  # anthropic | none
-AI_ANALYSIS_MODEL = os.getenv('AI_ANALYSIS_MODEL', 'claude-opus-4-8')
+AI_ANALYSIS_MODEL = os.getenv('AI_ANALYSIS_MODEL', 'claude-opus-5-5')
 # Credential, token-first: a Claude Code OAuth token (`claude setup-token`) is preferred and
 # sent as a Bearer auth token with the oauth beta header; ANTHROPIC_API_KEY is the fallback.
 # Set only ONE — if both a token and an API key are present the Anthropic API returns 401.
