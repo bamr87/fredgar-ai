@@ -22,7 +22,7 @@ Material that describes SEC systems and APIs (not specific to this repo’s code
 
 ## Product
 
-- **[../PRD.md](../PRD.md)** — Product requirements and vision. The banner at the top clarifies how much of it is implemented in this repository versus aspirational.
+- **[PRD.md](PRD.md)** — Product requirements and vision. The banner at the top clarifies how much of it is implemented in this repository versus aspirational.
 
 ## Data and reference JSON
 

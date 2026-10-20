@@ -105,4 +105,4 @@ Raw SEC JSON is cached in the `EdgarSecPayload` table keyed by `(cik, kind)`. Re
 ## Conventions
 - New persisted state → add the model to `warehouse` and run `makemigrations` (CI fails on missing migrations).
 - Tests use `pytest` + `pytest-django` + `responses` (mock SEC/FRED — tests must not hit the live network; the `requires_network` marker is excluded from CI).
-- Reference docs: [`docs/architecture.md`](docs/architecture.md), [`docs/api-and-cli.md`](docs/api-and-cli.md) (full command + route list), [`docs/sec-reference/`](docs/sec-reference/). [`PRD.md`](PRD.md) is aspirational — check its banner for what's actually implemented.
+- Reference docs: [`docs/architecture.md`](docs/architecture.md), [`docs/api-and-cli.md`](docs/api-and-cli.md) (full command + route list), [`docs/sec-reference/`](docs/sec-reference/). [`docs/PRD.md`](docs/PRD.md) is aspirational — check its banner for what's actually implemented.
