@@ -153,7 +153,7 @@ GitHub Actions: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs Ruff
 - **[`docs/architecture.md`](docs/architecture.md)** — Apps, data flow, DB-first SEC caching.
 - **[`docs/api-and-cli.md`](docs/api-and-cli.md)** — REST routes and `manage.py` commands.
 - **[`docs/sec-reference/`](docs/sec-reference/)** — SEC API and PDS context (external behavior).
-- **[`PRD.md`](PRD.md)** — Product vision and roadmap (see banner there for scope vs code).
+- **[`docs/PRD.md`](docs/PRD.md)** — Product vision and roadmap (see banner there for scope vs code).
 
 ## Contributing
 
