@@ -6,47 +6,47 @@
 
 ## Overview
 
-**Fredgar AI** (FRED + EDGAR, with AI) is a Django + Django REST Framework backend with a Vite/React UI for **SEC EDGAR** company data and optional **FRED** macro series, with AI-assisted interpretation and summaries.
+**Fredgar AI** (FRED + EDGAR, with AI) is a Django + Django REST Framework backend with a Vite/React UI for **SEC EDGAR** company data and optional **FRED** macro series, with AI-assisted interpretation and summaries. A weekly GitHub Pages build publishes a static, no-login mirror of the warehouse at [bamr87.github.io/fredgar-ai](https://bamr87.github.io/fredgar-ai/).
 
 ## Features
 
-- SEC EDGAR company data through direct SEC APIs (`sec_edgar` app)
+- SEC EDGAR company data through direct SEC APIs (`sec_edgar` app), cached DB-first to respect SEC fair-access limits
 - Optional FRED macro series (`public_data` app, needs `FRED_API_KEY`)
-- Versioned REST API at `/api/v1/` built with Django REST Framework
+- Versioned REST API at `/api/v1/` built with Django REST Framework, with an OpenAPI schema and Swagger UI
 - React + TypeScript (Vite) frontend in `frontend/`
-- AI-assisted interpretation and summaries of the data
-
-## Stack
-
-- **Backend**: Python 3.12+, Django 5+, DRF, `sec_edgar` (direct SEC APIs), `public_data` (FRED)
-- **Frontend**: React + TypeScript (Vite) in [`frontend/`](frontend/)
-- **Database**: SQLite by default; set `DATABASE_URL` for PostgreSQL
+- AI-assisted interpretation and summaries of the data, grounded in SEC filing text
+- A static "Wikipedia of company financials" site (`generate_static_site`) and an auditable enrichment pipeline for customer/vendor lists (`enrich_*`)
 
 ## Quick start
 
-```bash
-git clone https://github.com/bamr87/fredgar-ai.git
-cd fredgar-ai
-python3 -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-cp src/.env.example src/.env   # set USER_AGENT_EMAIL (required by SEC)
-cd src
-python manage.py migrate
-python manage.py runserver
-```
-
-API base: **http://127.0.0.1:8000/api/v1/** (legacy **/api/** mirrors the same routes).
-
-### Frontend
+Clone [bamr87/fredgar-ai](https://github.com/bamr87/fredgar-ai), then from the repo root (Python 3.12+, Node 20+):
 
 ```bash
-cd frontend
-npm install
-npm run dev
+# install
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt -r requirements-dev.txt
+cp src/.env.example src/.env        # set USER_AGENT_EMAIL (SEC requires it)
+
+# run the API on http://127.0.0.1:8000/api/v1/
+(cd src && python manage.py migrate && python manage.py runserver)
+
+# run the UI on http://127.0.0.1:5173 (proxies /api to :8000)
+(cd frontend && npm ci && npm run dev)
+
+# test and lint (from the repo root)
+pytest -q
+ruff check src tests
+(cd src && python manage.py makemigrations --check --dry-run)
+(cd frontend && npm run lint && npm run build)
 ```
 
-Vite proxies `/api` to `http://127.0.0.1:8000`. Optional: set `VITE_API_BASE` (e.g. production API URL). See [`frontend/README.md`](frontend/README.md).
+The legacy `/api/` path mirrors the same routes. Set `VITE_API_BASE` to point the UI at another API; see [`frontend/README.md`](frontend/README.md).
+
+## Stack
+
+- **Backend**: Python 3.12+, Django 6, DRF, `sec_edgar` (direct SEC APIs), `public_data` (FRED), Celery + Redis for async sync jobs
+- **Frontend**: React + TypeScript (Vite) in [`frontend/`](frontend/)
+- **Database**: SQLite by default; set `DATABASE_URL` for PostgreSQL
 
 ## Environment
 
@@ -58,110 +58,68 @@ See [`src/.env.example`](src/.env.example). Important:
 
 ## Common tasks
 
-Typical flows (from `src/`):
+Typical flows, from `src/`:
 
 ```bash
 cd src
-python manage.py ingest_htm --url 'https://www.sec.gov/Archives/edgar/data/.../file.htm' --ticker AAPL
 python manage.py sync_submissions --ticker AAPL
 python manage.py sync_company_facts --ticker AAPL
 python manage.py sync_derived_metrics --ticker AAPL
+python manage.py ingest_htm --url 'https://www.sec.gov/Archives/edgar/data/.../file.htm' --ticker AAPL
 python manage.py generate_static_site --ticker AAPL --output ../site   # static "Wikipedia" site
-python manage.py publish_static_site --output ../site   # sync default cohort from SEC + render (the GitHub Pages build)
+python manage.py publish_static_site --output ../site   # sync the default cohort from SEC + render (the GitHub Pages build)
 python manage.py refresh_series_bundles            # register + FRED-sync all series bundles
 python manage.py sync_series_bundle --slug core    # or sync one bundle by slug (needs FRED_API_KEY)
 ```
 
-The static site (`generate_static_site`) renders offline HTML — one page per company with financial statements, derived metrics, filings, and a 23k-row facts table, each with copy-to-clipboard and CSV/JSON downloads. Serve `site/` from any static host (GitHub Pages, S3, nginx). A GitHub Actions workflow ([`.github/workflows/pages.yml`](.github/workflows/pages.yml)) publishes it to **GitHub Pages** on a weekly schedule via `publish_static_site` — the public, no-login mirror of the interactive app. Setup and details: [`docs/static-site.md`](docs/static-site.md).
+The same sync actions are on the API, for example `POST /api/v1/companies/{id}/sync-submissions/`. Every route and command is listed in the generated [`docs/reference/`](docs/reference/), and [`docs/api-and-cli.md`](docs/api-and-cli.md) explains how they fit together. The static site renders offline HTML — one page per company with statements, derived metrics, filings and facts, each with copy and CSV/JSON downloads — and [`.github/workflows/pages.yml`](.github/workflows/pages.yml) publishes it weekly; see [`docs/static-site.md`](docs/static-site.md).
 
-Same sync actions are available on the API, for example `POST /api/v1/companies/{id}/sync-submissions/` and `POST /api/v1/companies/{id}/sync-facts/`. **Full command list, CRM pipeline, and bulk ZIP loaders** are documented in [`docs/api-and-cli.md`](docs/api-and-cli.md).
-
-Bundles are defined as JSON under [`src/public_data/bundles/`](src/public_data/bundles/). Observations: `GET /api/v1/series-bundles/{slug}/observations/`.
-
-### Sample company list (reference data, not ingested by Django)
-
-[`data/samples/companies-sample.csv`](data/samples/companies-sample.csv) is a small CRM-style export checked into git. Large exports go under **`data/local/`** (gitignored), e.g. `data/local/companies-clean.json` for `load_crm_companies_json`. SEC issuers live in the `warehouse` app after sync/ingest. If an older database still has table `erp_clients_erpclientrow`, drop it or recreate the DB; Django no longer ships that app.
-
-### HTM ingest
-
-The standalone pre-Django scripts have been removed; the Django management commands are the canonical CLI. To ingest one HTM filing:
-
-```bash
-cd src
-python manage.py ingest_htm --url 'https://www.sec.gov/Archives/.../file.htm' --ticker AAPL
-```
-
-## Project structure
-- [`src/config/`](src/config/) — Django settings and URLs
-- [`src/warehouse/`](src/warehouse/) — `Company`, `Filing`, `Fact`, `DerivedMetric`, peers
-- [`src/sec_edgar/`](src/sec_edgar/) — SEC client, HTM parser, ingest + sync services
-- [`src/public_data/`](src/public_data/) — external series catalog + FRED sync
-- [`src/api/v1/`](src/api/v1/) — versioned REST API
-- [`tests/`](tests/) — pytest + pytest-django
-
-Data layout (reference, samples, local): [`data/README.md`](data/README.md).
+Series bundles are JSON under [`src/public_data/bundles/`](src/public_data/bundles/). A small CRM-style sample lives in [`data/samples/companies-sample.csv`](data/samples/companies-sample.csv); large exports go under the gitignored `data/local/` (see [`data/README.md`](data/README.md)).
 
 ## Docker Compose
 
-From the repo root, **PostgreSQL + API** (port **8000**), with `./data` mounted for reference JSON and HTM artifacts:
+From the repo root, PostgreSQL + the API on port 8000, with `./data` mounted for reference JSON and HTM artifacts:
 
 ```bash
 docker compose up -d --build
 curl -s http://127.0.0.1:8000/api/v1/health/
+docker compose --profile dev up -d --build    # + Vite dev UI on :5173, proxying /api to the API container
+docker compose --profile prod up -d --build   # + static UI behind nginx on :8080, same-origin /api
+docker compose --profile ci run --rm test     # CI-style checks against Postgres
 ```
 
-Optional env (shell or a `.env` file next to `docker-compose.yml`): `DJANGO_SECRET_KEY`, `USER_AGENT_EMAIL`, `DJANGO_DEBUG`, `CORS_ALLOWED_ORIGINS`. Container entrypoints are summarized in [`docker/README.md`](docker/README.md).
-
-**Vite dev UI** (port **5173**), proxying `/api` to the API container:
-
-```bash
-docker compose --profile dev up -d --build
-```
-
-For the Compose `frontend` service, `API_PROXY_TARGET=http://web:8000` is set in [`docker-compose.yml`](docker-compose.yml). For Vite on the host, omit it; the default is `http://127.0.0.1:8000` (see [`frontend/.env.example`](frontend/.env.example)).
-
-**Static UI + nginx** (port **8080**), same-origin `/api` proxied to Django:
-
-```bash
-docker compose --profile prod up -d --build
-```
-
-**CI-style checks in containers** (ruff, `makemigrations --check`, `manage.py check`, pytest against Postgres). Mounts `./data` for reference files used in tests:
-
-```bash
-docker compose --profile ci run --rm test
-```
-
-Single-image API build (no Compose) still works:
-
-```bash
-docker build -t fredgar-ai .
-docker run -p 8000:8000 -e USER_AGENT_EMAIL=you@example.com fredgar-ai
-```
-
-## Tests & CI
-
-```bash
-pytest -q
-```
-
-GitHub Actions: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs Ruff, migration checks, `manage.py check`, pytest (SQLite and PostgreSQL), and `npm ci` + production build for the Vite frontend. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for matching local commands.
+Optional env (shell or a `.env` next to `docker-compose.yml`): `DJANGO_SECRET_KEY`, `USER_AGENT_EMAIL`, `DJANGO_DEBUG`, `CORS_ALLOWED_ORIGINS`. The container scripts are described in [`docker/README.md`](docker/README.md). A single-image build without Compose also works: `docker build -t fredgar-ai .` then `docker run -p 8000:8000 -e USER_AGENT_EMAIL=you@example.com fredgar-ai`.
 
 ## Documentation
 
-- **[`docs/README.md`](docs/README.md)** — Index of all technical and reference docs.
-- **[`docs/architecture.md`](docs/architecture.md)** — Apps, data flow, DB-first SEC caching.
-- **[`docs/api-and-cli.md`](docs/api-and-cli.md)** — REST routes and `manage.py` commands.
-- **[`docs/sec-reference/`](docs/sec-reference/)** — SEC API and PDS context (external behavior).
-- **[`docs/PRD.md`](docs/PRD.md)** — Product vision and roadmap (see banner there for scope vs code).
+- **[`docs/README.md`](docs/README.md)** — the index of every document in the repo.
+- **[`docs/architecture.md`](docs/architecture.md)** — apps, data flow, DB-first SEC caching.
+- **[`docs/api-and-cli.md`](docs/api-and-cli.md)** — how the REST API and `manage.py` commands fit together, with the generated [route](docs/reference/api-routes.md) and [command](docs/reference/management-commands.md) reference.
+- **[`PRD.md`](PRD.md)** — product vision and roadmap (its scope table separates shipped from planned).
+
+## Project structure
+
+- [`src/config/`](src/config/) — Django settings and URLs
+- [`src/warehouse/`](src/warehouse/) — every model: `Company`, `Filing`, `Fact`, `DerivedMetric`, peers, CRM staging, enrichment
+- [`src/sec_edgar/`](src/sec_edgar/) — SEC client, HTM parser, ingest + sync services
+- [`src/public_data/`](src/public_data/) — external series catalog + FRED sync
+- [`src/enrichment/`](src/enrichment/) — the claim-based enrichment framework
+- [`src/api/v1/`](src/api/v1/) — versioned REST API
+- [`frontend/`](frontend/) — the Vite/React UI
+- [`tests/`](tests/) — pytest + pytest-django
+- [`docs/`](docs/) — topic docs, ADRs and the generated reference
+
+## Development
+
+Build, test and lint commands are in [Quick start](#quick-start); `make all` runs the blocking CI checks (lint, migrations, tests with the coverage gate). [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs Ruff, migration checks, `manage.py check`, pytest (SQLite and PostgreSQL) and the frontend build. After changing a route, a view docstring or a command, regenerate the reference with `python3 tools/gen_reference.py --write`. Agents and contributors: start with [`AGENTS.md`](AGENTS.md).
 
 ## Contributing
 
-Contributions are welcome via pull request. Use [Conventional Commits](https://www.conventionalcommits.org/) and keep the CI checks green. See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow. AI agents should start with [CLAUDE.md](CLAUDE.md).
+Contributions are welcome via pull request. Use [Conventional Commits](https://www.conventionalcommits.org/) and keep the CI checks green. See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow; AI agents start with [AGENTS.md](AGENTS.md).
 
 ## Changelog
 
-Notable changes are recorded in [CHANGELOG.md](CHANGELOG.md). Tagged versions are on the [releases page](https://github.com/bamr87/fredgar-ai/releases).
+Notable changes are recorded in [CHANGELOG.md](CHANGELOG.md), written by release-please ([docs/releasing.md](docs/releasing.md)). Tagged versions are on the [releases page](https://github.com/bamr87/fredgar-ai/releases).
 
 ## License
 
