@@ -1,6 +1,8 @@
 # Product Requirements Document (PRD): Fredgar AI
 
-> **How to use this document:** Product vision, roadmap, and “implemented vs planned” live here. For **architecture**, **every REST route**, and **management commands**, use the technical index at [`docs/README.md`](docs/README.md) — especially [`docs/architecture.md`](docs/architecture.md) and [`docs/api-and-cli.md`](docs/api-and-cli.md). Anything labeled *future*, *roadmap*, or *aspirational* may not exist in the codebase yet.
+> Product vision, scope and roadmap for Fredgar AI, with what is implemented today marked apart from what is planned.
+
+**How to use this document:** product vision, roadmap, and “implemented vs planned” live here. For **architecture**, **every REST route**, and **management commands**, use the technical index at [`docs/README.md`](docs/README.md) — especially [`docs/architecture.md`](docs/architecture.md) and [`docs/api-and-cli.md`](docs/api-and-cli.md). Anything labeled *future*, *roadmap*, or *aspirational* may not exist in the codebase yet. Open work is tracked in [GitHub Issues](https://github.com/bamr87/fredgar-ai/issues), the backlog of record.
 
 ## 1. Document overview
 

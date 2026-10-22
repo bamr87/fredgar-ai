@@ -78,12 +78,10 @@ Watch these — they can go stale silently:
 
 - **`dtsPropsFor` is a hand-maintained copy of 10 prop contracts.** If
 `Button`, `DataTable`, `Tabs`, `Segmented`, `Query`, the four charts, or `CompanyMultiSelect` change their props upstream, the emitted `.d.ts` will keep describing the old shape and nothing will flag it. Diff these against `frontend/types/` after any change to those components.
-- **`.design-sync/docs/*.md` descriptions are hand-written** and will drift from
-  the components they describe.
+- **`.design-sync/docs/*.md` descriptions are hand-written** and will drift from the components they describe.
 - **Preview fixtures are illustrative, not live data** — the SEC figures in
 `previews/` (FY2024 revenue, margins, CIKs) were written by hand and are not refreshed from the warehouse.
-- **`frontend/types/` must be regenerated before the converter runs.** A stale
-  tree silently produces stale props. `cfg.buildCmd` does it; run it.
+- **`frontend/types/` must be regenerated before the converter runs.** A stale tree silently produces stale props. `cfg.buildCmd` does it; run it.
 - **Never uploaded.** This repo has been converted and verified locally only —
 `DesignSync` could not authorize in the environment where this ran, so there is no `projectId` in the config and no `_ds_sync.json` anchor on any project. The next run with authorization does a **first-time upload**: it creates the project, records `projectId`, and re-verifies everything (there is no anchor to skip against). All 51 authored previews and their config carry forward, so the expensive part is already done.
 - Toolchain assumptions at time of writing: node with `npm ci` from

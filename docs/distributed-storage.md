@@ -1,5 +1,7 @@
 # Distributed extract storage — specification
 
+> Proposed (not built) content-addressed EDGAR/FRED extract store: incremental pulls, a local compressed backup and Kaggle clean snapshots.
+
 **Status:** proposed (not implemented). This is the target design. Where it disagrees with the code, the code is current behavior and this document is the change we intend to make.
 
 **Goal:** cache EDGAR and FRED extracts so we never re-download bytes we already have, can retrieve both *raw* (pre-processed) and *clean* (post-processed) artifacts without hitting the source, and publish a versioned clean snapshot to **Kaggle** plus a **local compressed backup**. A **bonus** path treats Kaggle as an *inbound* source too: identify, extract, and enrich complementary public datasets so the warehouse is rich on companies, industries, markets, and economies — without redundant downloads or inventing facts.

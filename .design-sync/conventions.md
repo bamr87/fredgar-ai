@@ -43,8 +43,7 @@ Anything not in that list should be a token in an inline style, never an invente
 
 - Every numeric figure gets `className="num"` so columns align.
 - Table money/percent columns use `align: 'right'` in the `DataTable` column def.
-- Attach `Provenance` to any figure sourced from SEC or FRED — this system shows
-  its work.
+- Attach `Provenance` to any figure sourced from SEC or FRED — this system shows its work.
 - Reach for `Query` rather than hand-rolling loading/error/empty branches.
 - `Stat` renders its own card; don't nest it inside another `Card`.
 
@@ -52,5 +51,4 @@ Anything not in that list should be a token in an inline style, never an invente
 
 - `_ds/<folder>/styles.css` → `@import`s `fonts/fonts.css` and `_ds_bundle.css`.
 **`_ds_bundle.css` is the real stylesheet** — read it for the exact rules behind any class above.
-- `components/<group>/<Name>/<Name>.prompt.md` for per-component usage, and
-  `<Name>.d.ts` for the prop contract.
+- `components/<group>/<Name>/<Name>.prompt.md` for per-component usage, and `<Name>.d.ts` for the prop contract.
