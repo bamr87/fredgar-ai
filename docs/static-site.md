@@ -22,8 +22,7 @@ demo widget (built from data already computed per company during the publish loo
 - `about.html` — data sources, methodology, and the two-front-ends story
 - `macro/` — the **FRED macro section** (when series data is warehoused): `macro/index.html`
 lists the curated theme bundles; `macro/<slug>/index.html` renders each bundle's series with latest value, 1M/1Y deltas, a server-rendered SVG sparkline (no JS required), curation notes, industry-relevance tags, and a link back to the series on fred.stlouisfed.org — plus per-bundle `observations.csv` (full synced history, long format) and `bundle.json`. Includes the required FRED® API attribution. Omitted entirely when nothing is synced — no empty shell pages, and the "Macro" nav link only appears when the section exists.
-- per-company `company.json`, `facts.csv`, `metrics.csv`, `statements.csv`, `filings.csv`,
-  `leadership.csv`; site-wide `companies.json` / `companies.csv`
+- per-company `company.json`, `facts.csv`, `metrics.csv`, `statements.csv`, `filings.csv`, `leadership.csv`; site-wide `companies.json` / `companies.csv`
 - `.nojekyll` (always) and `sitemap.xml` / `robots.txt` (when a base URL is configured)
 
 ### The landing page's live demo
@@ -88,10 +87,8 @@ One-time repository setup:
 1. **Settings → Pages → Build and deployment → Source: "GitHub Actions".**
 2. Add a `USER_AGENT_EMAIL` repository **variable or secret** — SEC requires a contact
 email in the `User-Agent`; the refresh workflow (and the publish's bootstrap fallback) fails fast without it.
-3. Run the **"Refresh warehouse dataset"** workflow once — the one-time load that creates
-   the `dataset` release. All publishes are offline from then on.
-4. Optional: a `STATIC_SITE_APP_URL` repository variable with the public URL of the
-   interactive app; every static page then shows a "Live app ↗" cross-link.
+3. Run the **"Refresh warehouse dataset"** workflow once — the one-time load that creates the `dataset` release. All publishes are offline from then on.
+4. Optional: a `STATIC_SITE_APP_URL` repository variable with the public URL of the interactive app; every static page then shows a "Live app ↗" cross-link.
 5. Optional: a `FRED_API_KEY` repository **secret**
 ([free key](https://fred.stlouisfed.org/docs/api/api_key.html)) so the refresh workflow also syncs the macro section. Without it the site simply omits the macro pages.
 
@@ -99,10 +96,8 @@ The published URL is `https://<owner>.github.io/<repo>/` (the workflow derives i
 
 ## Cross-linking the two front ends
 
-- Static → app: `--app-url` flag or `STATIC_SITE_APP_URL` env (see
-  [`src/.env.example`](../src/.env.example)); rendered in the header/footer/about page.
-- App → static: set `VITE_STATIC_SITE_URL` when building the frontend; the sidebar shows a
-  "Public mirror" link (see [`frontend/README.md`](../frontend/README.md)).
+- Static → app: `--app-url` flag or `STATIC_SITE_APP_URL` env (see [`src/.env.example`](../src/.env.example)); rendered in the header/footer/about page.
+- App → static: set `VITE_STATIC_SITE_URL` when building the frontend; the sidebar shows a "Public mirror" link (see [`frontend/README.md`](../frontend/README.md)).
 
 ## Settings
 
