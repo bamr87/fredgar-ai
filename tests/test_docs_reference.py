@@ -9,13 +9,21 @@ re-renders both and fails when a committed file is stale; the fix is always
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parent.parent
+GENERATOR = ROOT / "tools" / "gen_reference.py"
+
+# The Docker CI image (Dockerfile `test` stage) copies only src/, tests/ and
+# data/reference/, so there is no generator or docs/ to compare; CI on a checkout
+# always has both.
+pytestmark = pytest.mark.skipif(
+    not GENERATOR.is_file(), reason="no tools/ in this tree (Docker CI image)"
+)
 
 
 def _generator():
-    spec = importlib.util.spec_from_file_location(
-        "gen_reference", ROOT / "tools" / "gen_reference.py"
-    )
+    spec = importlib.util.spec_from_file_location("gen_reference", GENERATOR)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
