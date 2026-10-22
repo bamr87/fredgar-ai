@@ -299,6 +299,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
         throttle_classes=[SecActionThrottle],
     )
     def sync_submissions(self, request, pk=None):
+        """Sync this company's filing index from SEC submissions into `Filing` rows."""
         company = self.get_object()
         ua = sec_user_agent_email_from_request(request)
         if _wants_async(request):
@@ -319,6 +320,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
         throttle_classes=[SecActionThrottle],
     )
     def sync_facts(self, request, pk=None):
+        """Sync this company's SEC companyfacts into `Fact` rows."""
         company = self.get_object()
         ua = sec_user_agent_email_from_request(request)
         if _wants_async(request):
@@ -334,6 +336,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["get"], url_path="edgar-sync-status")
     def edgar_sync_status(self, request, pk=None):
+        """Last EDGAR sync timestamps for this company, with the latest error snippet."""
         company = self.get_object()
         state = EdgarEntitySyncState.objects.filter(company_id=company.id).first()
         return Response(
@@ -347,6 +350,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["get"], url_path="analytics/latest-by-concepts")
     def analytics_latest_by_concepts(self, request, pk=None):
+        """Latest fact per requested concept (`concepts` is comma-separated)."""
         company = self.get_object()
         raw = (request.query_params.get("concepts") or "").strip()
         concepts = [c.strip() for c in raw.split(",") if c.strip()]
@@ -361,6 +365,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["get"], url_path="analytics/timeseries")
     def analytics_timeseries(self, request, pk=None):
+        """Time series for one concept, or a priority chain of concepts across XBRL tag changes."""
         company = self.get_object()
         # `concepts` (comma-separated priority chain) resolves a continuous series
         # across XBRL tag migrations; `concept` is the single-tag legacy form.
@@ -885,18 +890,24 @@ class FilingViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class SectionViewSet(viewsets.ReadOnlyModelViewSet):
+    """Sections parsed from ingested filings."""
+
     queryset = Section.objects.all()
     serializer_class = SectionSerializer
     filterset_fields = ["filing", "name"]
 
 
 class TableViewSet(viewsets.ReadOnlyModelViewSet):
+    """Tables parsed from ingested filings."""
+
     queryset = Table.objects.all()
     serializer_class = TableSerializer
     filterset_fields = ["filing"]
 
 
 class FactViewSet(viewsets.ReadOnlyModelViewSet):
+    """XBRL facts, filterable by company, taxonomy, unit, concept and period (`FactFilterSet`)."""
+
     queryset = Fact.objects.all().order_by("-period_end", "concept")
     serializer_class = FactSerializer
     filterset_class = FactFilterSet
@@ -919,6 +930,7 @@ class FactViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="facets")
     def facets(self, request):
+        """Per-company fact aggregates: taxonomies, top concepts and years (`company` required)."""
         company_id = request.query_params.get("company")
         if not company_id:
             return Response(
@@ -952,12 +964,16 @@ class FactViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class DerivedMetricViewSet(viewsets.ReadOnlyModelViewSet):
+    """Derived metrics computed from facts (`compute-metrics`, `sync_derived_metrics`)."""
+
     queryset = DerivedMetric.objects.all().order_by("-period_end", "key")
     serializer_class = DerivedMetricSerializer
     filterset_fields = ["company", "key"]
 
 
 class PeerGroupViewSet(viewsets.ModelViewSet):
+    """Peer groups of companies, with a cross-member fact comparison."""
+
     queryset = PeerGroup.objects.all().order_by("name")
     serializer_class = PeerGroupSerializer
     search_fields = ["name"]
@@ -987,18 +1003,24 @@ class PeerGroupViewSet(viewsets.ModelViewSet):
 
 
 class ExternalSeriesViewSet(viewsets.ReadOnlyModelViewSet):
+    """The external time-series catalog (FRED and other providers)."""
+
     queryset = ExternalSeries.objects.all().order_by("provider", "external_id")
     serializer_class = ExternalSeriesSerializer
     filterset_fields = ["provider", "external_id"]
 
 
 class SeriesObservationViewSet(viewsets.ReadOnlyModelViewSet):
+    """Observations of the external time series."""
+
     queryset = SeriesObservation.objects.all().order_by("-observation_date")
     serializer_class = SeriesObservationSerializer
     filterset_fields = ["series"]
 
 
 class SeriesBundleViewSet(viewsets.ReadOnlyModelViewSet):
+    """Named series bundles (by `slug`), with a snapshot of their observations."""
+
     queryset = SeriesBundle.objects.all().order_by("slug")
     serializer_class = SeriesBundleSerializer
     lookup_field = "slug"

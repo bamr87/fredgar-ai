@@ -1,147 +1,36 @@
 # API and CLI
 
-The REST API and management commands for **Fredgar AI** (FRED + EDGAR, with AI) — the backend serving SEC EDGAR company data and FRED macro series with AI-assisted analysis.
+> How the REST API and the `manage.py` commands fit together — base paths, auth, async jobs and caching flags — with links to the generated route and command reference.
 
-All paths below are relative to the API host (e.g. `http://127.0.0.1:8000`). Authenticated vs anonymous behavior follows DRF defaults in settings; many endpoints are open for local development.
+The route and command tables themselves are generated from the source, so they cannot drift from it:
+
+- **[reference/api-routes.md](reference/api-routes.md)** — every route: method, path, view, access rule, the parameters the handler reads, and its summary.
+- **[reference/management-commands.md](reference/management-commands.md)** — every management command, grouped by app, with its help text and options.
+
+Regenerate both with `python3 tools/gen_reference.py --write` after changing a route, a view docstring or a command; `tests/test_docs_reference.py` fails while they are stale. The summaries come from the view and command docstrings and `help` strings, so improve those rather than the generated files.
 
 ## REST API
 
-**Versioned base:** `/api/v1/`  
-**Legacy alias:** `/api/` (same routes).
+- **Base path:** `/api/v1/` is canonical. `/api/` is a legacy alias that includes the same URLconf ([`src/api/urls.py`](../src/api/urls.py)); add routes in `src/api/v1/` only.
+- **Auth:** token and session authentication. Reads are public; writes and every SEC-hitting action need a staff user (`api.permissions.IsAdminOrReadOnly`, the DRF default in `src/config/settings.py`).
+- **OpenAPI:** `drf-spectacular` serves the OpenAPI 3 schema at `/api/v1/schema/` and Swagger UI at `/api/v1/docs/`. Responses are JSON; the browsable API renderer is added only when `DJANGO_DEBUG` is on.
+- **Throttling:** anonymous and user rates apply everywhere (`THROTTLE_ANON`, `THROTTLE_USER`), and the SEC-hitting actions carry the scoped `sec` rate (`THROTTLE_SEC`, default `20/min`).
+- **Async jobs:** the sync actions accept `?async=true` and answer `202` with a `task_id`; poll `GET /api/v1/tasks/{task_id}/` for the Celery result.
+- **SEC caching:** reads go DB first and only call SEC when nothing is cached; `?force_refresh=true` refetches on the endpoints whose **Params** column lists it. See [architecture.md](architecture.md).
+- **SEC User-Agent:** SEC requires a contact email. The server uses `USER_AGENT_EMAIL`; a request may override it with the `X-Sec-User-Agent-Email` header.
 
-### Health and reference
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/v1/health/` | Liveness. |
-| GET | `/api/v1/health/ready/` | Readiness; checks database connectivity. |
-| GET | `/api/v1/reference/sic-codes/` | SIC lookup/autocomplete (`q`, `code`, `limit`). |
-
-### Router resources
-
-Registered with `DefaultRouter` (list/create/detail patterns apply where the viewset allows writes):
-
-| Prefix | ViewSet | Notes |
-|--------|---------|--------|
-| `/companies/` | `CompanyViewSet` | Filter: `ticker`, `cik`, `industry`, `sic_code`, `hq_state`. Search on name/ticker/cik. |
-| `/company-metadata/` | `CompanyMetadataViewSet` | Read-only, paginated metadata + filters for dashboards. |
-| `/filings/` | `FilingViewSet` | Filing CRUD + custom actions below. |
-| `/facts/` | `FactViewSet` | XBRL facts; supports filtering via `FactFilterSet`. |
-| `/sections/`, `/tables/` | Section/table CRUD | Linked to filings. |
-| `/derived-metrics/` | Read-only | Computed metrics. |
-| `/peer-groups/` | `PeerGroupViewSet` | Peer sets + analytics action. |
-| `/public-series/` | Read-only | External series catalog. |
-| `/public-observations/` | Read-only | Series observations. |
-| `/series-bundles/` | `SeriesBundleViewSet` | Bundles by `slug`; nested observations action. |
-| `/enrichment-datasets/` | `EnrichmentDatasetViewSet` | Read-only, by `slug`; coverage report action. |
-| `/enrichment-records/` | `EnrichmentRecordViewSet` | Read-only enriched party records with resolved values. Filter: `dataset__slug`, `status`, `company`. Search on `source_key`. |
-
-### Custom actions (`companies`)
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/v1/companies/edgar-search/?q=&limit=&force_refresh=` | Search `ListedIssuer` directory; optional refresh from SEC. |
-| POST | `/api/v1/companies/from-edgar/` | Body: `ticker`, `cik`, optional `name` — get or create `Company`. |
-| POST | `/api/v1/companies/bulk-from-edgar-tickers/` | Bulk insert/update from SEC ticker file. |
-| POST | `/api/v1/companies/{id}/suggest-schema/` | Heuristic JSON schema hints (placeholder for richer filing-driven logic). |
-| POST | `/api/v1/companies/{id}/sync-submissions/` | Sync filing index from SEC. |
-| POST | `/api/v1/companies/{id}/sync-facts/` | Sync companyfacts into `Fact`. |
-| GET | `/api/v1/companies/{id}/edgar-sync-status/` | Last sync timestamps and error snippet. |
-| GET | `/api/v1/companies/{id}/analytics/latest-by-concepts/?concepts=&taxonomy=` | Latest fact per concept. |
-| GET | `/api/v1/companies/{id}/analytics/timeseries/?concept=&taxonomy=&limit=` | Time series for one concept. |
-| GET | `/api/v1/companies/{id}/statements/?statement_type=&taxonomy=` | Curated statement view (balance/income/cash-flow) from Facts. |
-| POST | `/api/v1/companies/{id}/compute-metrics/` | Compute/refresh `DerivedMetric` rows from Facts (admin only). |
-| GET | `/api/v1/companies/{id}/profile/` | Consolidated Company-360 view (identity, financials, filings, documents, CRM) with provenance. |
-| GET | `/api/v1/companies/{id}/leadership/` | Officers/directors/owners extracted from SEC Forms 3/4/5 (titles, roles, tenure, insider shares). |
-| GET | `/api/v1/companies/{id}/stakeholder-assessment/` | Transparent people-vs-profits orientation index + decomposed signals + caveats. See [leadership-methodology.md](leadership-methodology.md). |
-| POST | `/api/v1/companies/{id}/analyze-leadership/` | Run the gated LLM narrative analysis (initiatives/quotes/direction), grounded in SEC filing text (admin only; off unless `ENABLE_AI_ANALYSIS`). |
-| GET | `/api/v1/companies/{id}/leadership-analysis/` | Latest stored LLM leadership analysis (summary, initiatives, verbatim quotes, cited sources, caveats). |
-| GET | `/api/v1/companies/compare/?group_by=&concept=` | Cohort compare of a concept across an industry/region group. |
-| GET | `/api/v1/companies/leadership-compare/?cik=&cik=` | Compare leadership footprint + stakeholder orientation across companies. |
-
-### Other custom actions
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/v1/company-metadata/facets/` | Aggregates: SIC, state, industry, coverage counts. |
-| POST | `/api/v1/filings/ingest-htm/` | Body: `url`, and `ticker` or `cik` — ingest one HTM filing. |
-| POST | `/api/v1/filings/ingest-submission/` | Body: `url`, and `ticker` or `cik` — decompose a full submission `.txt` into `FilingDocument` rows (admin). |
-| GET | `/api/v1/filings/search/?q=&form_type=&cik=` | Full-text search across ingested filing-document text (Postgres FTS; SQLite substring fallback). |
-| GET | `/api/v1/tasks/{task_id}/` | Celery task state for an async sync job. |
-| GET | `/api/v1/facts/facets/?company=` | Per-company fact aggregates (taxonomy, top concepts, years). |
-| GET | `/api/v1/peer-groups/{id}/analytics/peer-fact-compare/?concept=&taxonomy=` | Compare concept across peer group. |
-| GET | `/api/v1/series-bundles/{slug}/observations/?limit=` | Bundle observations snapshot. |
-| GET | `/api/v1/enrichment-datasets/{slug}/report/` | Coverage, validation tiers and per-provider outcomes for a dataset. |
-| GET | `/api/v1/enrichment-records/{id}/evidence/` | Every claim behind a record: provider, confidence, verified flag, source URL. |
-| GET | `/api/v1/enrichment-records/contested/` | The review queue — records where comparable sources disagreed closely. |
-
-Interactive exploration: open `/api/v1/` in a browser with Django staff session if browsable API is enabled.
-
-**OpenAPI:** Served by `drf-spectacular` at `/api/v1/schema/` (OpenAPI 3, titled "Fredgar AI API") with Swagger UI at `/api/v1/docs/`. This document remains a human-readable route inventory.
-
----
+The same service functions back the API and the CLI: `POST /api/v1/companies/{id}/sync-submissions/` and `manage.py sync_submissions` both call `sync_submissions_for_company`.
 
 ## Management commands
 
-Run from `src/` with `PYTHONPATH=src` and `DJANGO_SETTINGS_MODULE=config.settings` (or `cd src` after `pip install`):
+Run them from `src/` (being there is what puts `config` and the apps on the path):
 
 ```bash
 cd src
 python manage.py <command> [options]
+python manage.py help <command>      # full argument help, with defaults
 ```
 
-### `sec_edgar`
+The enrichment pipeline (`enrich_*`) is CLI-only by design: running providers spends SEC and search budget and takes minutes, so it does not belong in a request a browser can retry. The HTTP side only reads its results. See [enrichment.md](enrichment.md).
 
-| Command | Purpose |
-|---------|---------|
-| `ingest_htm` | Ingest one HTM filing (`--url`, optional `--ticker` / `--cik`). |
-| `ingest_submission` | Decompose a full submission `.txt` into `FilingDocument` rows (`--url`, `--ticker`/`--cik`, `--no-extract`). |
-| `sync_submissions` | Pull SEC submissions index into `Filing` for a company (`--ticker` / `--cik`). |
-| `sync_company_facts` | Load companyfacts into `Fact` (`--ticker` / `--cik`). |
-| `sync_listed_issuers` | Refresh `ListedIssuer` from `company_tickers.json`. |
-| `bulk_load_edgar_companies` | Upsert `Company` rows from SEC ticker JSON. |
-| `bulk_load_edgar_zip` | Load nightly `submissions.zip` / `companyfacts.zip` (heavy). |
-| `sync_sic_reference` | Fetch/cache SIC reference JSON under data dir. |
-| `sync_accounting_reference` | Merge `data/reference/sources/accounting/` (`acct_facts.csv` + `acct_facts_overlay.json`) into `generated/us_gaap_account_map.json`. |
-| `generate_edgar_reference` | Regenerate portions of `data/reference/` from live SEC samples. |
-
-### `warehouse`
-
-| Command | Purpose |
-|---------|---------|
-| `populate_edgar_database` | Opinionated bootstrap: migrate, listed issuers, optional bulk ZIP, references. |
-| `load_crm_companies_json` | Load CRM JSON into `CrmCompanyRecord`. |
-| `match_crm_sec_titles` | Match CRM names to SEC issuers. |
-| `sync_crm_matched_edgar` | Sync submissions/facts for matched CRM rows (rate-limit friendly). |
-| `sync_all_companies` | Rate-limited, resumable bulk sync of EDGAR datasets for every company (`--delay`, `--limit`, `--offset`, `--with-ticker-only`, `--leadership-limit`, `--force`, `--user-agent-email`). |
-| `sync_derived_metrics` | Compute `DerivedMetric` rows from existing Facts (`--ticker` / `--cik` / `--all`); also the backfill path. |
-| `generate_static_site` | Render a static HTML site of company financials (`--ticker`/`--cik`/`--all`, `--output`, `--limit`) with per-company copy/download CSV+JSON. |
-| `publish_static_site` | End-to-end public-mirror build: sync a curated ticker set from SEC (submissions, facts, metrics, leadership), then render the static site (`--tickers`, `--output`, `--skip-sync`, `--sync-only`, `--all-warehouse`, `--skip-macro`, `--delay`, `--leadership-limit`, `--force-refresh`, `--base-url`, `--app-url`). `--sync-only` refreshes the serverless dataset without rendering; `--all-warehouse` renders everything already warehoused, offline. Runs in the GitHub Pages + dataset-refresh workflows; see [static-site.md](static-site.md). |
-| `sync_leadership` | Extract officers/directors/owners from SEC Forms 3/4/5 (`--ticker`/`--cik`, `--limit`). |
-| `compute_stakeholder_assessment` | Compute the transparent people-vs-profits orientation index (`--ticker`/`--cik`/`--all`). |
-| `analyze_leadership` | Gated LLM narrative analysis of leadership from SEC filing text (`--ticker`/`--cik`/`--all`, `--no-persist`; needs `ENABLE_AI_ANALYSIS` + `requirements-ai.txt`). |
-
-### `enrichment`
-
-The enrichment pipeline is CLI-only by design: running providers spends SEC and search budget and takes minutes, so it does not belong in a request. See [`enrichment.md`](enrichment.md).
-
-| Command | Purpose |
-|---------|---------|
-| `enrich_init` | Load a CSV list into a dataset (`--dataset`, `--csv`, `--mapping manufacturing_v1\|master_list_v2\|custom`). |
-| `enrich_plan` | Print the provider wave order and worst-case network cost, before spending anything. |
-| `enrich_run` | Iterate the dataset through the provider graph. Resumable. `--only`, `--refresh` (drop a provider's claims so it genuinely re-runs), `--limit`, `--no-web`, `--search`, `--max-fetch/--max-search/--max-api`. |
-| `enrich_resolve` | Rebuild the golden record from current claims (precedence beats confidence). |
-| `enrich_link` | Attach records to warehouse `Company` rows via their **verified** CIK (`--no-create`). |
-| `enrich_export` | Write the customer/vendor master CSV (`--out`). |
-| `enrich_report` | Coverage, trust distribution and per-provider outcomes (`--json`; omit `--dataset` to list datasets). |
-| `enrich_evidence` | Why does this record say that? Every claim with its source (`--name`). |
-
-### `public_data`
-
-| Command | Purpose |
-|---------|---------|
-| `load_series_bundle` | Register a single bundle JSON via `--file` (e.g. `src/public_data/bundles/core.json`). |
-| `sync_series_bundle` | Pull observations for a named bundle, e.g. `--slug core` (FRED needs `FRED_API_KEY`). |
-| `refresh_series_bundles` | Register **and** FRED-sync every bundle JSON in the bundles dir — the easiest way to load all macro series (`--dir`, `--no-sync`, `--delay`, `--days-back`). |
-
-Use `python manage.py help <command>` for full arguments.
+`publish_static_site` is the GitHub Pages build (sync a curated cohort from SEC, then render); see [static-site.md](static-site.md). The leadership commands and their caveats are in [leadership-methodology.md](leadership-methodology.md).
