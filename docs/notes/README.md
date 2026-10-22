@@ -1,5 +1,7 @@
 # Notes
 
+> Dated design essays on the enrichment framework, kept for the reasoning behind its rules rather than as reference.
+
 Design essays, kept for the reasoning rather than as reference. When one of these disagrees with [`enrichment.md`](../enrichment.md) or the code, the code is right — these are dated, and they describe the framework as it stood before it moved into fredgar.
 
 They are worth keeping because they record *why* things are built the way they are, including the bugs that forced each rule. The Eaton / Eaton Vance case in particular is the reason the website verifier exists in its current form, and it is still the clearest explanation of what an unverified value costs you.

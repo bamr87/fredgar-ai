@@ -1,5 +1,7 @@
 # Static site — the public mirror on GitHub Pages
 
+> The public static mirror on GitHub Pages: what is generated, the `publish_static_site` pipeline, deployment setup, and cross-links with the interactive app.
+
 Fredgar AI ships two front ends over the same warehouse:
 
 | | Interactive app ([`frontend/`](../frontend/)) | Static mirror (this doc) |

@@ -1,5 +1,7 @@
 # Contributing
 
+> How to set up a local environment, run the same lint, test and migration checks as CI, and land a change in fredgar-ai.
+
 Thanks for contributing to **Fredgar AI** (FRED + EDGAR, with AI) — a Django + DRF backend and Vite/React UI for **SEC EDGAR** company data and **FRED** macro series, with AI-assisted analysis. Repo: [`fredgar-ai`](https://github.com/bamr87/fredgar-ai).
 
 ## Prerequisites
@@ -76,7 +78,9 @@ python manage.py makemigrations --check --dry-run   # CI-style
 
 - Index: [`docs/README.md`](docs/README.md)
 - Architecture: [`docs/architecture.md`](docs/architecture.md)
-- API and CLI inventory: [`docs/api-and-cli.md`](docs/api-and-cli.md)
+- API and CLI: [`docs/api-and-cli.md`](docs/api-and-cli.md), with the generated route and command reference in [`docs/reference/`](docs/reference/) (`python3 tools/gen_reference.py --write`)
+- Releasing: [`docs/releasing.md`](docs/releasing.md)
+- Agent guide: [`AGENTS.md`](AGENTS.md)
 
 ## SEC usage
 

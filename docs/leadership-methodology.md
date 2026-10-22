@@ -1,5 +1,7 @@
 # Leadership & stakeholder analytics — methodology and responsible use
 
+> How leadership is extracted from SEC Forms 3/4/5 and how the transparent people-vs-profits index is computed, with its limits — read before relying on either.
+
 This Fredgar AI subsystem extracts company leadership from SEC filings and computes a transparent "stakeholder orientation" (people-vs-profits) signal. **Read this before relying on any output.**
 
 ## What it is — and is not
