@@ -1,5 +1,7 @@
 # Leadership & stakeholder analytics — methodology and responsible use
 
+> How leadership is extracted from SEC Forms 3/4/5 and how the transparent people-vs-profits index is computed, with its limits — read before relying on either.
+
 This Fredgar AI subsystem extracts company leadership from SEC filings and computes a transparent "stakeholder orientation" (people-vs-profits) signal. **Read this before relying on any output.**
 
 ## What it is — and is not
@@ -39,10 +41,8 @@ Label: `index ≥ 0.33` → "Reinvestment / stakeholder-tilted"; `≤ −0.33` �
 only a *proxy* for building physical/local capacity. True outsourcing signals require geographic-segment disclosures or the text/AI path — not this index.
 - **`insider_alignment` counts all Form 4 share changes**, including option exercises,
 grants, and tax withholding — not just open-market conviction buys. A refinement would weight by transaction code (P/S vs A/F). The raw value is always disclosed.
-- **Employee-count / wage signals** are omitted because there is no reliable, universal
-  us-gaap XBRL tag for them; add them when a company's human-capital data is structured.
-- Tenure (`first_seen`/`last_seen`) is a **filing-date range**, not an official
-  appointment record.
+- **Employee-count / wage signals** are omitted because there is no reliable, universal us-gaap XBRL tag for them; add them when a company's human-capital data is structured.
+- Tenure (`first_seen`/`last_seen`) is a **filing-date range**, not an official appointment record.
 
 ## AI analysis (Claude by default, grounded)
 
@@ -51,10 +51,8 @@ Narrative extraction — leadership **initiatives**, **verbatim quotes**, and **
 **How it stays grounded.** When enabled, the analyzer (`AnthropicAnalyzer`, default model `claude-opus-5-5`) is sent *only* excerpts from this company's already-ingested SEC filing text, each labeled `[S1]`, `[S2]`, …, and is constrained by a strict system prompt to:
 
 1. Ground every item in the excerpts and cite the source label.
-2. Reproduce quotes **verbatim** — never invent, paraphrase, or reconstruct a quote; if no
-   verbatim quote exists, return none.
-3. Make **no** personal, character, competence, popularity, or "approval" judgment about any
-   named individual — only disclosed company/leadership actions and plans.
+2. Reproduce quotes **verbatim** — never invent, paraphrase, or reconstruct a quote; if no verbatim quote exists, return none.
+3. Make **no** personal, character, competence, popularity, or "approval" judgment about any named individual — only disclosed company/leadership actions and plans.
 4. Use no outside knowledge and no speculation.
 
 Output is validated against a JSON schema (structured outputs), persisted as a `LeadershipAnalysis` row with the `used_sources` it cited, and degrades gracefully: if the analyzer is off (or no credential/SDK is configured), no filing text is available, or the model call fails, a clearly-marked empty/`error` result is returned and stored — never a fabricated one.

@@ -1,5 +1,7 @@
 # Data directory layout
 
+> What lives under `data/` — the committed reference JSON the app reads at runtime, samples, enrichment lists and the gitignored local drop zone — and the commands that regenerate it.
+
 ## `reference/` (stable, app-backed)
 
 JSON loaded at runtime (`sec_edgar.reference_data`, `data/manifest.json`).

@@ -1,5 +1,7 @@
 # Enrichment — providers propose, resolution disposes
 
+> How the enrichment framework turns a list of organization names into an auditable customer/vendor master: providers propose claims, resolution disposes.
+
 Takes any list of organization names and iterates it through public sources — SEC EDGAR first, then FRED macro context, business registries, geography, and the open web — to produce an auditable customer/vendor master.
 
 ```
