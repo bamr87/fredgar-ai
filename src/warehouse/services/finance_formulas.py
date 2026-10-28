@@ -179,8 +179,9 @@ def beta(asset_returns: Sequence[Number], market_returns: Sequence[Number]) -> D
         return None
     ri = [_d(x) for x in asset_returns]
     rm = [_d(x) for x in market_returns]
-    n = len(rm)
-    mi, mm = sum(ri) / n, sum(rm) / n
-    cov = sum((a - mi) * (b - mm) for a, b in zip(ri, rm, strict=True)) / (n - 1)
-    var = sum((b - mm) ** 2 for b in rm) / (n - 1)
+    n = Decimal(len(rm))
+    zero = Decimal(0)
+    mi, mm = sum(ri, zero) / n, sum(rm, zero) / n
+    cov = sum(((a - mi) * (b - mm) for a, b in zip(ri, rm, strict=True)), zero) / (n - 1)
+    var = sum(((b - mm) ** 2 for b in rm), zero) / (n - 1)
     return _div(cov, var)
