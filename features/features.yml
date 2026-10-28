@@ -52,3 +52,18 @@ features:
     scenarios:
       - verify/scenarios/smoke-home.yml
     evidence: []
+  - id: FREDGAR-009
+    title: "Core finance formulas and ratio metrics"
+    description: "Twenty standard finance formulas (PV, FV, NPV, WACC, CAPM, EPS, P/E, D/E, ROE, ROA, ROI, current/quick ratio, EBITDA, payback, dividend yield, EV, interest coverage, Sharpe, beta) as pure functions; EPS, ROE, ROA, D/E, current, quick, EBITDA and interest coverage also computed per period as derived metrics from XBRL facts. Implements proposed PRD requirement FR-ANL-001."
+    implemented: true
+    surface: api
+    link: src/warehouse/services/finance_formulas.py
+    docs: docs/finance-formulas.md
+    tags: [metrics, ratios, valuation]
+    date: 2026-10-27
+    provenance: { introduced_in: "PRD.md §4.6 FR-ANL-001" }
+    tests:
+      - tests/warehouse/test_finance_formulas.py
+      - tests/warehouse/test_metrics.py
+    scenarios: []
+    evidence: []

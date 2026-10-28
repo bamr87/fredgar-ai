@@ -163,6 +163,10 @@ Format: *As a [user], I want [capability] so that [benefit].*
 
 11–16. Accounts, export, alerts, AI chat, collaboration, third-party APIs → **Future** (see 4.3).
 
+### 4.6 Proposed requirements
+
+- **FR-ANL-001 — Core finance formulas (proposed, 2026-10-27).** The system provides the 20 standard valuation, profitability, liquidity and risk formulas (PV, FV, NPV, WACC, CAPM, EPS, P/E, D/E, ROE, ROA, ROI, current ratio, quick ratio, EBITDA, payback period, dividend yield, EV, interest coverage, Sharpe ratio, beta) as tested pure functions, and computes the ones derivable from XBRL facts (EPS, ROE, ROA, D/E, current, quick, EBITDA, interest coverage) per filing period as derived metrics. Formulas that need market prices or return series stay caller-supplied until price data is in scope (§4.3). Advances roadmap item 3 and user story 5. Feature: FREDGAR-009; detail: [`docs/finance-formulas.md`](docs/finance-formulas.md).
+
 ---
 
 ## 5. Non-functional requirements

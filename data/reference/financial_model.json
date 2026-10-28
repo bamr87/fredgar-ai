@@ -32,7 +32,18 @@
       "PaymentsForCapitalImprovements"
     ],
     "accounts_receivable_current": ["AccountsReceivableNetCurrent"],
-    "accounts_payable_current": ["AccountsPayableCurrent"]
+    "accounts_payable_current": ["AccountsPayableCurrent"],
+    "net_income": ["NetIncomeLoss", "ProfitLoss", "NetIncomeLossAvailableToCommonStockholdersBasic"],
+    "weighted_average_shares_basic": ["WeightedAverageNumberOfSharesOutstandingBasic"],
+    "stockholders_equity": ["StockholdersEquity", "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"],
+    "total_assets": ["Assets"],
+    "assets_current": ["AssetsCurrent"],
+    "liabilities_current": ["LiabilitiesCurrent"],
+    "total_debt": ["DebtLongtermAndShorttermCombinedAmount", "LongTermDebt", "LongTermDebtNoncurrent"],
+    "operating_income": ["OperatingIncomeLoss"],
+    "interest_expense": ["InterestExpense", "InterestExpenseNonoperating", "InterestExpenseDebt"],
+    "income_tax_expense": ["IncomeTaxExpenseBenefit"],
+    "depreciation_and_amortization": ["DepreciationDepletionAndAmortization", "DepreciationAndAmortization", "DepreciationAmortizationAndAccretionNet"]
   },
   "derived_kpis": {
     "gross_margin": {
@@ -57,6 +68,46 @@
       "formula": "accounts_receivable_current - accounts_payable_current",
       "requires_any": ["accounts_receivable_current", "accounts_payable_current"],
       "notes": "Uses zero for missing operands when at least one present."
+    },
+    "eps_basic_computed": {
+      "formula": "net_income / weighted_average_shares_basic",
+      "requires": ["net_income", "weighted_average_shares_basic"],
+      "notes": "EPS = Net Income / Shares Outstanding, using weighted-average basic shares; computed, not the filer's reported EarningsPerShareBasic. Value is USD per share (unit column says ratio). Source: finance cheat sheet shared at https://x.com/CompoundingW/status/2114932373280460836 (docs/finance-formulas.md)."
+    },
+    "return_on_equity": {
+      "formula": "net_income / stockholders_equity",
+      "requires": ["net_income", "stockholders_equity"],
+      "notes": "ROE = Net Income / Shareholders' Equity, period-end equity (not average). Source: finance cheat sheet shared at https://x.com/CompoundingW/status/2114932373280460836 (docs/finance-formulas.md)."
+    },
+    "return_on_assets": {
+      "formula": "net_income / total_assets",
+      "requires": ["net_income", "total_assets"],
+      "notes": "ROA = Net Income / Total Assets, period-end assets (not average). Source: finance cheat sheet shared at https://x.com/CompoundingW/status/2114932373280460836 (docs/finance-formulas.md)."
+    },
+    "debt_to_equity": {
+      "formula": "total_debt / stockholders_equity",
+      "requires": ["total_debt", "stockholders_equity"],
+      "notes": "D/E = Total Debt / Shareholders' Equity. total_debt prefers the combined short+long-term tag, then LongTermDebt (includes current maturities); filers that tag short-term borrowings separately are understated. Source: finance cheat sheet shared at https://x.com/CompoundingW/status/2114932373280460836 (docs/finance-formulas.md)."
+    },
+    "current_ratio": {
+      "formula": "assets_current / liabilities_current",
+      "requires": ["assets_current", "liabilities_current"],
+      "notes": "Current Ratio = Current Assets / Current Liabilities. Source: finance cheat sheet shared at https://x.com/CompoundingW/status/2114932373280460836 (docs/finance-formulas.md)."
+    },
+    "quick_ratio": {
+      "formula": "(assets_current - inventory) / liabilities_current",
+      "requires": ["assets_current", "inventory", "liabilities_current"],
+      "notes": "Quick (acid-test) Ratio = (Current Assets - Inventory) / Current Liabilities. Skipped when no inventory fact (current_ratio then applies). Source: finance cheat sheet shared at https://x.com/CompoundingW/status/2114932373280460836 (docs/finance-formulas.md)."
+    },
+    "ebitda": {
+      "formula": "net_income + interest_expense + income_tax_expense + depreciation_and_amortization",
+      "requires": ["net_income", "interest_expense", "income_tax_expense", "depreciation_and_amortization"],
+      "notes": "EBITDA = Net Income + Interest + Taxes + Depreciation + Amortization; XBRL reports D&A as one combined tag. Source: finance cheat sheet shared at https://x.com/CompoundingW/status/2114932373280460836 (docs/finance-formulas.md)."
+    },
+    "interest_coverage": {
+      "formula": "operating_income / interest_expense",
+      "requires": ["operating_income", "interest_expense"],
+      "notes": "Interest Coverage = EBIT / Interest Expense, with OperatingIncomeLoss as the EBIT proxy. Source: finance cheat sheet shared at https://x.com/CompoundingW/status/2114932373280460836 (docs/finance-formulas.md)."
     }
   },
   "statement_roles": {

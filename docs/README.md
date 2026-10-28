@@ -26,6 +26,7 @@ Start with the [root README](../README.md) for setup, Docker and tests, and [AGE
 | [`docs/architecture.md`](architecture.md) | Django apps, data flow from SEC to the warehouse, and the DB-first JSON caching pattern — for backend developers and operators. |
 | [`docs/distributed-storage.md`](distributed-storage.md) | Proposed (not built) content-addressed EDGAR/FRED extract store: incremental pulls, a local compressed backup and Kaggle clean snapshots. |
 | [`docs/enrichment.md`](enrichment.md) | How the enrichment framework turns a list of organization names into an auditable customer/vendor master: providers propose claims, resolution disposes. |
+| [`docs/finance-formulas.md`](finance-formulas.md) | The 20 core valuation, profitability, liquidity and risk formulas: which run per filing period over XBRL facts as derived metrics, which are pure helpers, and what data each needs. |
 | [`docs/leadership-methodology.md`](leadership-methodology.md) | How leadership is extracted from SEC Forms 3/4/5 and how the transparent people-vs-profits index is computed, with its limits — read before relying on either. |
 | [`docs/releasing.md`](releasing.md) | How a fredgar-ai release happens: release-please turns Conventional Commit PR titles into a release PR, and merging that PR tags and publishes it. |
 | [`docs/static-site.md`](static-site.md) | The public static mirror on GitHub Pages: what is generated, the `publish_static_site` pipeline, deployment setup, and cross-links with the interactive app. |
