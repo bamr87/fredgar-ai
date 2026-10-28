@@ -10,7 +10,7 @@
 
 This PRD describes Fredgar AI (FRED + EDGAR, with AI; repository: fredgar-ai): a web-oriented system to extract, normalize, and explore SEC EDGAR company and filing data alongside FRED macro series, with a path toward AI-assisted interpretation and summaries. The long-term vision includes LLM-driven parsing, narrative insights, and rich visualizations; the current product emphasizes direct SEC APIs, a structured warehouse (companies, filings, XBRL facts, derived metrics), a versioned REST API, and a React UI.
 
-_Source: [docs/PRD.md](PRD.md)._
+_Source: [PRD.md](../PRD.md)._
 
 ## 2. Invariants (non-negotiable)
 
@@ -29,7 +29,7 @@ When two documents disagree, the higher one wins and the lower one is fixed in t
 
 1. This constitution (and its ratified amendments in [docs/amendments/](amendments/))
 2. [AGENTS.md](../AGENTS.md) — how to work here (commands, conventions, Definition of Done)
-3. The PRD ([`docs/PRD.md`](PRD.md)) — what the product must do (requirement ids `FRn` / `NFRn`)
+3. The PRD ([`PRD.md`](../PRD.md)) — what the product must do (requirement ids `FRn` / `NFRn`)
 4. [features/features.yml](../features/features.yml) — what it does today (stable feature ids)
 5. ADRs in [docs/adr/](adr/) and specs — why and how a specific change was made
 6. Code, tests, generated files

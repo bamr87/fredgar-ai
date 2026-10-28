@@ -1,6 +1,6 @@
 # Docker helper scripts
 
-Build- and run-time helper scripts for the **Fredgar AI** containers, used by [`Dockerfile`](../Dockerfile) and [`docker-compose.yml`](../docker-compose.yml).
+> Build- and run-time helper scripts for the **Fredgar AI** containers, used by [`Dockerfile`](../Dockerfile) and [`docker-compose.yml`](../docker-compose.yml).
 
 | File | Role |
 |------|------|

@@ -25,7 +25,7 @@ features:
     prd: ["§4.1"]
     surface: infra
     link: "src/sec_edgar"
-    docs: "docs/PRD.md"
+    docs: "PRD.md"
   - id: FREDGAR-002
     title: "Financial data warehouse"
     description: "Company, Filing, Fact, sections/tables, derived metrics, CRM staging, listed issuers and EDGAR sync state models (PRD 4.1)."
@@ -34,7 +34,7 @@ features:
     prd: ["§4.1"]
     surface: infra
     link: "src/warehouse"
-    docs: "docs/PRD.md"
+    docs: "PRD.md"
   - id: FREDGAR-003
     title: "REST API v1"
     description: "/api/v1/ companies, filings, facts, sections, tables, derived metrics, peer groups, SIC reference, health, series bundles (PRD 4.1)."
@@ -43,7 +43,7 @@ features:
     prd: ["§4.1"]
     surface: api
     link: "src/api"
-    docs: "docs/PRD.md"
+    docs: "PRD.md"
   - id: FREDGAR-004
     title: "React dashboard"
     description: "React 19 + Vite app shell with dashboard and company flows (metadata, EDGAR summary, exploration); not yet full charting or AI chat (PRD 4.1)."
@@ -52,7 +52,7 @@ features:
     prd: ["§4.1"]
     surface: ui
     link: "frontend/src"
-    docs: "docs/PRD.md"
+    docs: "PRD.md"
   - id: FREDGAR-005
     title: "Versioned reference data"
     description: "Reference JSON (schemas, taxonomies, financial model, SIC, accounting map) under data/reference/ and samples under data/samples/ (PRD 4.1)."
@@ -61,7 +61,7 @@ features:
     prd: ["§4.1"]
     surface: content
     link: "data/reference"
-    docs: "docs/PRD.md"
+    docs: "PRD.md"
   - id: FREDGAR-006
     title: "Leadership narrative analyzer (optional AI)"
     description: "analyze_leadership command / POST /companies/{id}/analyze-leadership/ extracting initiatives from filings (PRD 4.1)."
@@ -70,7 +70,7 @@ features:
     prd: ["§4.1"]
     surface: api
     link: "src/warehouse/services/leadership_ai.py"
-    docs: "docs/PRD.md"
+    docs: "PRD.md"
   - id: FREDGAR-007
     title: "Core product roadmap"
     description: "Items in PRD 4.2 (from vision, not all built)."
@@ -78,7 +78,7 @@ features:
     status: planned
     prd: ["§4.2"]
     surface: ui
-    docs: "docs/PRD.md"
+    docs: "PRD.md"
   - id: FREDGAR-008
     title: "Advanced / growth features"
     description: "Items in PRD 4.3 (future)."
@@ -86,4 +86,4 @@ features:
     status: planned
     prd: ["§4.3"]
     surface: ui
-    docs: "docs/PRD.md"
+    docs: "PRD.md"

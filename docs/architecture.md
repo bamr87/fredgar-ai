@@ -1,5 +1,7 @@
 # Architecture
 
+> Django apps, data flow from SEC to the warehouse, and the DB-first JSON caching pattern — for backend developers and operators.
+
 **Fredgar AI** (FRED + EDGAR, with AI) is a Django + DRF backend and Vite/React UI for SEC EDGAR company data (filings, XBRL facts) and FRED macro series, with AI-assisted analysis. The repository slug is `fredgar-ai` ([github.com/bamr87/fredgar-ai](https://github.com/bamr87/fredgar-ai)).
 
 ## Stack

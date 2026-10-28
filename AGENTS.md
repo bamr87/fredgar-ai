@@ -1,111 +1,129 @@
-# CLAUDE.md
+<!-- kit: sdlc v0.1.0 · AGENTS.md is the CANONICAL agent instructions file (decision D4, UPS-AGENT-07/08). -->
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+# fredgar-ai
 
-## What this is
+> Django + DRF backend and Vite/React UI for SEC EDGAR company data and FRED macro series, with AI-assisted analysis layered on top.
 
-**Fredgar AI** (FRED + EDGAR, with AI) — a Django + DRF backend serving **SEC EDGAR** company data (filings, XBRL facts) and optional **FRED** macro series, with a Vite/React frontend in [`frontend/`](frontend/) and AI-assisted analysis layered on top. Python lives under [`src/`](src/); tests under [`tests/`](tests/). Database is SQLite by default, PostgreSQL when `DATABASE_URL` is set (Docker/CI Postgres defaults to user/password/db `fredgar`; the CI ephemeral test database is `test_fredgar`).
+## What this repo is
 
-## Commands
+**Fredgar AI** (FRED + EDGAR, with AI) serves SEC EDGAR company data (filings, XBRL facts, derived metrics, leadership) and optional FRED macro series through a versioned REST API, a Vite/React UI in [`frontend/`](frontend/), and a static public mirror on GitHub Pages. Python lives under [`src/`](src/), tests under [`tests/`](tests/). The database is SQLite by default and PostgreSQL when `DATABASE_URL` is set (Docker/CI Postgres uses user/password/db `fredgar`; the CI test database is `test_fredgar`). A change is done when `ruff check src tests`, `pytest -q` and the migration check pass, a frontend change also passes `npm run lint && npm run build`, the generated reference is current, and the nearest README or `docs/` page reflects it.
 
-All `manage.py` commands run from **`src/`** — being in that directory plus `manage.py` is what puts `config` settings and the apps on the path. Lint/test run from the repo root.
+## Stack & commands
+
+Python 3.12+, Django 6 + DRF, Celery + Redis, React + TypeScript (Vite). `manage.py` runs from **`src/`** (that is what puts `config` and the apps on the path); lint and tests run from the repo root.
 
 ```bash
-# Setup
+# install
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt -r requirements-dev.txt
 cp src/.env.example src/.env        # set USER_AGENT_EMAIL (SEC requires it)
 
-# Backend
-cd src && python manage.py migrate && python manage.py runserver   # http://127.0.0.1:8000/api/v1/
+# run the API on http://127.0.0.1:8000/api/v1/
+(cd src && python manage.py migrate && python manage.py runserver)
 
-# Tests (from repo root)
+# run the UI on http://127.0.0.1:5173 (proxies /api to :8000)
+(cd frontend && npm ci && npm run dev)
+
+# test and lint (from the repo root)
 pytest -q
-pytest tests/api/test_filings_api.py                 # one file
-pytest tests/api/test_filings_api.py::test_name      # one test
-pytest -k edgar_db_first                             # by keyword
-
-# Lint / format (must pass for CI; ruff line-length 100, rules E,F,I,W)
 ruff check src tests
-ruff format src tests
-
-# Enrichment (from src/; see docs/enrichment.md)
-python manage.py enrich_init --dataset X --csv ../data/list.csv --mapping manufacturing_v1
-python manage.py enrich_plan --dataset X            # what WOULD run, before spending anything
-python manage.py enrich_run  --dataset X --no-web   # free + DB-first providers; resumable
-python manage.py enrich_resolve --dataset X         # claims -> golden record
-python manage.py enrich_link    --dataset X         # verified CIK -> warehouse Company
-python manage.py enrich_export  --dataset X --out ../data/enrichment/master.csv
-python manage.py enrich_report  --dataset X
-python manage.py enrich_evidence --dataset X --name "Some Company"
-
-# Migrations after model changes
-cd src && python manage.py makemigrations
-cd src && python manage.py makemigrations --check --dry-run   # CI gate; CI fails on missing migrations
-
-# Frontend (from frontend/)
-npm ci && npm run dev      # Vite :5173, proxies /api -> :8000
-npm run lint && npm run build
-
-# Docker (from repo root)
-docker compose up -d --build                    # Postgres + API on :8000
-docker compose --profile dev up -d --build      # + Vite dev UI on :5173
-docker compose --profile prod up -d --build     # + nginx static UI on :8080
-docker compose --profile ci run --rm test       # full CI suite vs Postgres (ruff, migration check, pytest w/ coverage gate)
+(cd src && python manage.py makemigrations --check --dry-run)
+(cd frontend && npm run lint && npm run build)
 ```
 
-### Test settings
+More, as needed:
 
-[`pyproject.toml`](pyproject.toml) `[tool.pytest.ini_options]` is the single pytest config: it sets `DJANGO_SETTINGS_MODULE = config.settings_test`, `pythonpath = ["src"]`, `testpaths`, and the markers (`slow`, `integration`, `requires_network`). A bare local `pytest`, CI, and Docker all run against `config.settings_test`. *(There used to be a `pytest.ini` that overrode this with `config.settings`; it was removed so local == CI.)*
+```bash
+pytest tests/api/test_filings_api.py::test_name     # one test (or -k keyword)
+ruff format src tests                               # format
+make test                                           # pytest with the CI coverage gate (--cov-fail-under=50)
+python3 tools/gen_reference.py --write              # regenerate docs/reference/ (--check to verify)
+python3 tools/docs_index.py --write                 # regenerate the docs/README.md index
+python3 tools/unwrap-prose.py --check               # markdown: one paragraph per line (--write to fix)
 
-[`config/settings_test`](src/config/settings_test.py) imports `settings.py` and flips on `DEBUG` + the fast MD5 password hasher, restricts `ALLOWED_HOSTS`, and neutralizes DRF throttles so tests never hit 429s. The coverage gate (`--cov-fail-under`, currently 50) is applied in CI/Docker (`docker/ci.sh`, `ci.yml`) and via `make test`, not a bare `pytest`.
+# enrichment chain (from src/; see docs/enrichment.md)
+python manage.py enrich_init --dataset X --csv ../data/list.csv --mapping manufacturing_v1
+python manage.py enrich_plan --dataset X            # what WOULD run, before spending anything
+python manage.py enrich_run --dataset X --no-web    # free + DB-first providers; resumable
+python manage.py enrich_resolve --dataset X         # claims -> golden record
+python manage.py enrich_link --dataset X            # verified CIK -> warehouse Company
+python manage.py enrich_export --dataset X --out ../data/enrichment/master.csv
+
+# Docker (from the repo root)
+docker compose up -d --build                        # Postgres + API on :8000
+docker compose --profile dev up -d --build          # + Vite dev UI on :5173
+docker compose --profile prod up -d --build         # + nginx static UI on :8080
+docker compose --profile ci run --rm test           # the CI suite against Postgres
+```
+
+Every route and command is listed in the generated [`docs/reference/`](docs/reference/) ([api-routes.md](docs/reference/api-routes.md), [management-commands.md](docs/reference/management-commands.md)); [`docs/api-and-cli.md`](docs/api-and-cli.md) explains how they fit together.
+
+**Test settings:** [`pyproject.toml`](pyproject.toml) `[tool.pytest.ini_options]` is the only pytest config — `DJANGO_SETTINGS_MODULE = config.settings_test`, `pythonpath = ["src"]`, the `slow`/`integration`/`requires_network` markers — so local, CI and Docker runs match. [`settings_test`](src/config/settings_test.py) imports `settings.py`, turns on `DEBUG` and the fast MD5 hasher, restricts `ALLOWED_HOSTS` and neutralizes DRF throttles. The coverage gate runs in CI/Docker (`docker/ci.sh`) and `make test`, not in a bare `pytest`.
+
+## Layout
+
+| Path | What lives there |
+| --- | --- |
+| `src/` | The Django project: apps `warehouse`, `sec_edgar`, `public_data`, `enrichment`, `api`, and `config` (below) |
+| `tests/` | pytest + pytest-django suite, one folder per app |
+| `frontend/` | React + TypeScript (Vite) UI — see [`frontend/README.md`](frontend/README.md) |
+| `data/` | Committed reference JSON, samples, enrichment lists; `data/local/` is gitignored — see [`data/README.md`](data/README.md) |
+| `docs/` | Topic docs, ADRs (`docs/adr/`), the generated `docs/reference/`; index at [`docs/README.md`](docs/README.md) |
+| `docker/` | Container entrypoint and CI scripts — see [`docker/README.md`](docker/README.md) |
+| `tools/` | Repo scripts (reference generator, docs index, prose gate) — see [`tools/README.md`](tools/README.md) |
+| `features/`, `verify/` | The feature index and the user-scenario verification kit |
+| `notebooks/` | Exploratory notebooks over the same pipeline |
+
+## Conventions
+
+- **Backlog of record:** GitHub Issues with the fleet labels (`.github/sdlc.yml` `backlog.mode: issues`). Pick up issues labelled `agent:ready`; never touch `agent:hold` or `human-review`.
+- **Definition of Done:** the fleet default pull request template (inherited; this repo has none). Every box is ticked before merge.
+- **Decisions:** ADRs in `docs/adr/NNNN-slug.md`, indexed in [`docs/adr/README.md`](docs/adr/README.md). Add one for anything hard to reverse.
+- **Commits:** Conventional Commits (`feat fix docs style refactor test chore perf ci build`). The PR title is the squash subject.
+- **Branches:** `feature/`, `fix/`, `docs/`, `refactor/`, `test/` or `chore/` off `main`.
+- **Changelog:** `CHANGELOG.md` is written by release-please from the PR titles ([`docs/releasing.md`](docs/releasing.md)). Never edit it, or a version number, by hand.
+- **Never:** push to `main` directly, commit secrets, suppress type errors, leave empty exception handlers, or edit generated files by hand (`docs/reference/*.md`, the `docs/README.md` index span).
+- **Models:** new persisted state goes in `warehouse` (no other app defines models); run `makemigrations` — CI fails on a missing migration.
+- **Tests never hit the network:** mock SEC/FRED with `responses`. CI does not deselect the `requires_network` marker, so never rely on it to keep a live call out of CI.
+- **Generated reference:** after changing a route, a view or command docstring, or a command's options, run `python3 tools/gen_reference.py --write`; `tests/test_docs_reference.py` fails while it is stale.
+- **Markdown:** one paragraph per line (`python3 tools/unwrap-prose.py --check`; CI enforces it).
 
 ## Architecture
 
 ### Apps (under `src/`)
-- **`warehouse`** — all persisted models ([`warehouse/models.py`](src/warehouse/models.py)): `Company`, `ListedIssuer`, `Filing`, `Section`, `Table`, `FilingDocument`, `Fact`, `DerivedMetric`, `PeerGroup`, CRM staging (`CrmCompanyRecord`), the SEC JSON cache (`EdgarSecPayload`, `EdgarEntitySyncState`), and the Company-360 layer (`DataSource`, `ExternalIdentifier`, `ContentChunk`). No other app defines models. Also holds the Celery tasks ([`warehouse/tasks.py`](src/warehouse/tasks.py)).
-- **`sec_edgar`** — SEC HTTP client, HTM parsing, and the ingest/sync services. No Django models of its own.
-- **`public_data`** — external time-series registry (`ExternalSeries`, `SeriesBundle`, `SeriesObservation`) and FRED sync.
-- **`enrichment`** — the claim-based enrichment framework (providers propose, resolution disposes). No Django models of its own; its persisted state is the `Enrichment*` models in `warehouse`.
-- **`api`** — DRF views only; the route table lives in [`api/v1/urls.py`](src/api/v1/urls.py).
-- **`config`** — settings, URLs, WSGI/ASGI.
 
-### Services hold the logic (thin views/commands, fat services)
-Business logic lives in `*/services/` modules. Both the DRF viewsets ([`api/v1/views.py`](src/api/v1/views.py)) and the `manage.py` commands (`*/management/commands/`) are thin wrappers that call the **same** service functions — e.g. `POST /companies/{id}/sync-submissions/` and `manage.py sync_submissions` both call `sync_submissions_for_company`. When changing ingest/sync behavior, edit the service, not the two callers.
+- **`warehouse`** — every persisted model ([`models.py`](src/warehouse/models.py)): `Company`, `ListedIssuer`, `Filing`, `Section`, `Table`, `FilingDocument`, `Fact`, `DerivedMetric`, `PeerGroup`, CRM staging (`CrmCompanyRecord`), the SEC JSON cache (`EdgarSecPayload`, `EdgarEntitySyncState`), the Company-360 layer (`DataSource`, `ExternalIdentifier`, `ContentChunk`) and the `Enrichment*` models. Also the Celery tasks ([`tasks.py`](src/warehouse/tasks.py)).
+- **`sec_edgar`** — SEC HTTP client, HTM/SGML parsing, ingest and sync services. No models.
+- **`public_data`** — external time-series registry (`ExternalSeries`, `SeriesBundle`, `SeriesObservation`) and FRED sync; bundles are JSON under `src/public_data/bundles/`.
+- **`enrichment`** — the claim-based enrichment framework. No models of its own.
+- **`api`** — DRF views only; routes in [`api/v1/urls.py`](src/api/v1/urls.py).
+- **`config`** — settings, URLs, Celery, WSGI/ASGI. Settings fail fast on insecure production config.
 
-### Key subsystems
-- **Computation tier** — `compute_derived_metrics` / `build_financial_statement` ([`warehouse/services/edgar/`](src/warehouse/services/edgar/)) turn `Fact` rows + `data/reference/financial_model.json` (concept_groups, derived_kpis, statement_schemas) into `DerivedMetric` rows and statement views. KPI formulas are evaluated with a safe AST walker, never `eval`. Metric computation runs **outside** the facts atomic block.
-- **Async jobs** — Celery + Redis ([`config/celery.py`](src/config/celery.py), [`warehouse/tasks.py`](src/warehouse/tasks.py)). Sync actions accept `?async=true` → 202 + `task_id`; poll `GET /api/v1/tasks/{id}/`. Tests run eager (`CELERY_TASK_ALWAYS_EAGER`).
-- **Filing corpus** — `ingest_submission` decomposes a full SEC submission `.txt` into `FilingDocument` rows (SGML parser ported from OpenEDGAR, MIT). Raw bytes go to content-addressed storage ([`sec_edgar/storage.py`](src/sec_edgar/storage.py), LOCAL/S3 by SHA-1); text is extracted (BeautifulSoup; Tika when `ENABLE_TIKA`) and full-text searchable at `/filings/search/` (Postgres FTS, SQLite `icontains` fallback).
-- **Company-360** — `GET /companies/{id}/profile/` consolidates identity + financials + filings + documents + CRM with provenance; `/companies/compare/` does cohort analytics. `ContentChunk` + a pluggable `Embedder` (off by default; pgvector is the prod upgrade) are the AI-retrieval foundation.
-- **Leadership & stakeholder analytics** — `sync_leadership` extracts officers/directors/owners from SEC Forms 3/4/5 ([`sec_edgar/parsers/ownership.py`](src/sec_edgar/parsers/ownership.py), [`warehouse/services/leadership.py`](src/warehouse/services/leadership.py)) into `Person`/`LeadershipPosition`. `compute_stakeholder_assessment` ([`warehouse/services/stakeholder.py`](src/warehouse/services/stakeholder.py)) produces a **transparent, source-cited people-vs-profits index** (reinvestment vs payout, capex/local proxy, R&D, insider alignment) — a heuristic about capital allocation, **not** a personal rating; every input is disclosed with caveats. See [`docs/leadership-methodology.md`](docs/leadership-methodology.md). LinkedIn/transcripts are **not scraped** (pluggable licensed/manual only). The optional **LLM narrative analyzer** ([`warehouse/services/leadership_ai.py`](src/warehouse/services/leadership_ai.py), `analyze_leadership` cmd / `POST /companies/{id}/analyze-leadership/`) extracts initiatives/verbatim-quotes/direction **strictly from ingested SEC filing excerpts** into `LeadershipAnalysis` — **enabled by default with Claude** as the provider (`ENABLE_AI_ANALYSIS` default on; `AI_ANALYSIS_MODEL=claude-opus-5-5`), authenticated **token-first** via a Claude Code OAuth token (`CLAUDE_CODE_OAUTH_TOKEN`, sent as a Bearer `auth_token` + `oauth-2025-04-20` beta header) with `ANTHROPIC_API_KEY` as fallback (set only one — both 401). It degrades to the `NoopAnalyzer` (no API call) unless the lazy-optional `anthropic` SDK (`requirements-ai.txt`) **and** a credential are both present. The system prompt forbids invented quotes and personal/character judgments; results are schema-validated and degrade gracefully (no fabrication on error).
-- **Static site** — `manage.py generate_static_site` ([`warehouse/services/static_site.py`](src/warehouse/services/static_site.py), templates in `warehouse/templates/staticsite/`) renders a fully static, offline "Wikipedia of company financials": one HTML page per company (infobox, statements, metrics, filings, documents, facts) + a landing/hero `index.html` (headline, a live JS "search a real company" demo built from data already computed per company — no extra queries, no client fetches, works without JS too — feature tour, editions comparison) with the full searchable company index preserved below it, plus per-company copy-to-clipboard and CSV/JSON downloads, and an optional **FRED macro section** (`macro/` — bundle pages with server-rendered SVG sparklines + `observations.csv`/`bundle.json`, built by [`public_data/services/static_export.py`](src/public_data/services/static_export.py); synced at publish time only when `FRED_API_KEY` is set, omitted when no series data exists). Build-time; reuses the profile/statements/analytics services. `manage.py publish_static_site` ([`static_site_publish.py`](src/warehouse/services/static_site_publish.py)) is the end-to-end publish pipeline (sync a curated ticker cohort from SEC → render) used by the **GitHub Pages** workflow ([`.github/workflows/pages.yml`](.github/workflows/pages.yml)) to publish the public no-login mirror; cross-links between the mirror and the interactive app come from `STATIC_SITE_*` settings / `VITE_STATIC_SITE_URL`. See [`docs/static-site.md`](docs/static-site.md).
-- **Enrichment framework** — takes any list of organization names and iterates it through public sources to build an auditable customer/vendor master ([`src/enrichment/`](src/enrichment/), models `EnrichmentDataset/Record/Claim/ProviderRun/GoldenField` in `warehouse`). **A provider never writes to a record; it emits `Claim`s** carrying a value, a confidence and the `Evidence` behind it, and resolution happens once in [`core/golden.py`](src/enrichment/core/golden.py) where *precedence beats confidence* — so "why does it say that?" always has an answer and close disagreement becomes a `contested` review queue instead of a coin flip. Providers declare `requires` (fields they cannot run without — this sets the wave order) and `defer_to` (fields that would change their answer, enforced by the runner then dropped once a record goes quiet). Runs are resumable (every `(record, provider)` attempt checkpointed), isolated (one provider raising costs one field), and budgeted (`--max-fetch`/`--max-search`/`--max-api` are hard caps). `enrich_run --refresh <provider>` drops one provider's claims so it genuinely re-runs, leaving every other provider's findings intact. EDGAR is the anchor: `edgar_issuer` blocks the list against cached `ListedIssuer` rows (no network) to find each CIK, then `edgar_submissions`/`edgar_facts` read **DB-first** through `edgar_sec_payload`; nothing they emit may outrank the CIK it derives from, so on an unverified CIK every claim is written unverified with scaled confidence. `fred` attaches the sector's macro series from the committed bundles (SIC-classified, with `macro_scope=domestic_us|us_proxy` because FRED measures the US), and `fred_deflator` restates a reported revenue in constant dollars — warehouse-only, silent rather than approximate when observations are unsynced. `revenue_model` estimates the private long tail from a revenue-per-employee benchmark **derived from the list's own SEC filers**, never blended with reported figures. See [`docs/enrichment.md`](docs/enrichment.md).
-- **Auth** — token + session; reads public, writes/sync require `is_staff` (`IsAdminOrReadOnly`). Settings fail-fast on insecure prod config.
+### Rules that hold the system together
 
-### DB-first SEC reads (the core caching pattern)
-Raw SEC JSON is cached in the `EdgarSecPayload` table keyed by `(cik, kind)`. Read paths go **DB → SEC API → save**: see [`edgar_sec_payload.py`](src/sec_edgar/services/edgar_sec_payload.py) (`get_submissions_payload`, `get_company_facts_payload`). They return the cached row unless `force_refresh=True`. This is deliberate — SEC enforces fair-access rate limits, so avoid live calls when a payload exists. To bypass the cache, thread `force_refresh` through (services), or pass `?force_refresh=true` (API) / `--force-refresh`-style flags (commands). `ListedIssuer` similarly caches `company_tickers.json` so ticker/name search never hits SEC. Proposed evolution (not built): content-addressed extract store, incremental revalidate, Kaggle/local clean snapshots — [`docs/distributed-storage.md`](docs/distributed-storage.md). Two frontends share that plane: **GitHub Pages is offline** (`--skip-sync`); the **local/cloud app** is the only runtime with API + AI.
+- **Thin views and commands, fat services.** Logic lives in `*/services/`; the DRF viewsets and the `manage.py` commands call the **same** functions (`POST /companies/{id}/sync-submissions/` and `manage.py sync_submissions` both call `sync_submissions_for_company`). Change the service, not the two callers.
+- **DB-first SEC reads.** Raw SEC JSON is cached in `EdgarSecPayload` keyed by `(cik, kind)`; reads go DB → SEC → save through [`edgar_sec_payload.py`](src/sec_edgar/services/edgar_sec_payload.py) and return the cached row unless `force_refresh=True` (`?force_refresh=true` on the API, `--force-refresh`-style flags on commands). SEC enforces fair-access limits, so never add a live call where a payload exists. `ListedIssuer` caches `company_tickers.json` so ticker/name search never hits SEC.
+- **SEC client and User-Agent.** [`SecEdgarClient`](src/sec_edgar/client.py) does all HTTP to `data.sec.gov`/`www.sec.gov` with `tenacity` retries and `429` → `RuntimeError`. SEC requires a contact email: `USER_AGENT_EMAIL`, overridable per request with the `X-Sec-User-Agent-Email` header ([`sec_user_agent.py`](src/api/sec_user_agent.py)). `sec_edgar/adapters/` defines the `EdgarDataSource` protocol; `DirectEdgarAdapter` is the real implementation.
+- **API versioning.** `/api/v1/` is canonical; `/api/` is a legacy alias of the same URLconf. Add routes in `api/v1/` only. OpenAPI at `/api/v1/schema/`, Swagger UI at `/api/v1/docs/`.
+- **Auth.** Token + session; reads are public, writes and sync actions need `is_staff` (`IsAdminOrReadOnly`).
+- **Async jobs.** Sync actions accept `?async=true` → `202` + `task_id`; poll `GET /api/v1/tasks/{id}/`. Tests run Celery eagerly (`CELERY_TASK_ALWAYS_EAGER`).
+- **Computation tier.** `compute_derived_metrics` / `build_financial_statement` ([`warehouse/services/edgar/`](src/warehouse/services/edgar/)) turn `Fact` rows plus `data/reference/financial_model.json` into `DerivedMetric` rows and statements. KPI formulas run through a safe AST walker, never `eval`; metric computation runs **outside** the facts atomic block.
+- **Filing corpus.** `ingest_submission` splits a full submission `.txt` into `FilingDocument` rows (SGML parser ported from OpenEDGAR, MIT); raw bytes go to content-addressed storage ([`storage.py`](src/sec_edgar/storage.py), LOCAL/S3 by SHA-1); text is searchable at `/filings/search/` (Postgres FTS, SQLite `icontains` fallback).
+- **Company-360.** `GET /companies/{id}/profile/` consolidates identity, financials, filings, documents and CRM with provenance; `ContentChunk` + a pluggable `Embedder` (off by default) are the retrieval foundation.
+- **Leadership and stakeholder analytics** ([`docs/leadership-methodology.md`](docs/leadership-methodology.md)). `sync_leadership` reads SEC Forms 3/4/5 into `Person`/`LeadershipPosition`; `compute_stakeholder_assessment` is a transparent, source-cited capital-allocation heuristic, **not** a personal rating. LinkedIn and transcripts are never scraped. The LLM analyzer ([`leadership_ai.py`](src/warehouse/services/leadership_ai.py)) works **only from ingested SEC filing excerpts**, forbids invented quotes and character judgments, schema-validates its output, and degrades to `NoopAnalyzer` (no API call) unless the optional `anthropic` SDK (`requirements-ai.txt`) **and** a credential exist. It is on by default (`ENABLE_AI_ANALYSIS`, `AI_ANALYSIS_MODEL=claude-opus-5-5`) and authenticates token-first with `CLAUDE_CODE_OAUTH_TOKEN` (Bearer + `oauth-2025-04-20` beta header), `ANTHROPIC_API_KEY` as fallback — set only one.
+- **Static site** ([`docs/static-site.md`](docs/static-site.md)). `generate_static_site` renders an offline HTML mirror from the same profile/statements/analytics services; `publish_static_site` (sync a cohort, then render) is what [`pages.yml`](.github/workflows/pages.yml) runs. GitHub Pages is offline (`--skip-sync`); only the local/cloud app has the API and AI.
+- **Enrichment** ([`docs/enrichment.md`](docs/enrichment.md)). A provider **never writes to a record** — it emits `Claim`s with value, confidence and evidence, and [`core/golden.py`](src/enrichment/core/golden.py) resolves them once, *precedence over confidence*; close disagreement becomes the `contested` queue. Runs are resumable, isolated per provider, and budgeted (`--max-fetch/--max-search/--max-api`). Nothing derived from an EDGAR CIK may outrank that CIK; estimates (`revenue_model`) are never blended with reported figures.
+- **Data directory.** `data/reference/` is read at runtime **and in tests** (and copied into images) — don't break it. Filing HTM downloads go to `EDGAR_DATA_DIR` (default: repo `data/`). The proposed content-addressed extract store is a spec only: [`docs/distributed-storage.md`](docs/distributed-storage.md).
 
-### EDGAR data source adapter
-`sec_edgar/adapters/` defines an `EdgarDataSource` Protocol ([`base.py`](src/sec_edgar/adapters/base.py)). `DirectEdgarAdapter` ([`direct.py`](src/sec_edgar/adapters/direct.py)) is the real implementation wrapping `SecEdgarClient`.
+[`PRD.md`](PRD.md) is partly aspirational — check its scope table for what is implemented.
 
-### SEC client and User-Agent
-[`sec_edgar/client.py`](src/sec_edgar/client.py) (`SecEdgarClient`) does all HTTP to `data.sec.gov` / `www.sec.gov`, with `tenacity` retries and explicit `429` → `RuntimeError`. SEC **requires** a contact email in `User-Agent`; it resolves from the `USER_AGENT_EMAIL` env var, and API requests may override it per-call via the `X-Sec-User-Agent-Email` header ([`api/sec_user_agent.py`](src/api/sec_user_agent.py)).
+## Fleet context
 
-### API versioning
-`/api/v1/` is canonical; `/api/` is a legacy alias that includes the exact same urlconf ([`api/urls.py`](src/api/urls.py)). Add routes in `api/v1/` only. OpenAPI 3 schema at `/api/v1/schema/` + Swagger UI at `/api/v1/docs/` (drf-spectacular); [`docs/api-and-cli.md`](docs/api-and-cli.md) is the human-readable route inventory.
+Member of the bamr87 fleet. The standards live in the hub: <https://github.com/bamr87/bamr87/tree/main/specs> (the Universal Project Standard). The repo's SDLC declaration is [`.github/sdlc.yml`](.github/sdlc.yml); `ci.yml` runs this repo's own jobs beside the hub's shared `standard-ci.yml` gate, and `conformance.yml` / `verify.yml` call the fleet conformance and verification workflows. This repo is a submodule of the hub: commit and push here first; the hub bumps its pointer afterwards.
 
-### Data directory ([`data/`](data/README.md))
-- `data/reference/` — committed JSON consumed by `sec_edgar.reference_data` at **runtime and in tests** (also copied into Docker images); don't break it. `data/reference/enrichment/` holds the ISO-3166 and business-registry tables the enrichment providers read.
-- `data/enrichment/` — enrichment input lists and exported vendor/customer masters.
-- `data/samples/` — small committed example exports.
-- `data/local/` — gitignored drop zone for large CRM/ERP exports (e.g. `companies-clean.json` for `load_crm_companies_json`).
-- Filing HTM downloads go to `EDGAR_DATA_DIR` (defaults to repo `data/`).
+## Standard deviations
 
-## Conventions
-- New persisted state → add the model to `warehouse` and run `makemigrations` (CI fails on missing migrations).
-- Tests use `pytest` + `pytest-django` + `responses` (mock SEC/FRED — tests must not hit the live network; the `requires_network` marker is excluded from CI).
-- Reference docs: [`docs/architecture.md`](docs/architecture.md), [`docs/api-and-cli.md`](docs/api-and-cli.md) (full command + route list), [`docs/sec-reference/`](docs/sec-reference/). [`docs/PRD.md`](docs/PRD.md) is aspirational — check its banner for what's actually implemented.
+none
 
 ## Governance
 
