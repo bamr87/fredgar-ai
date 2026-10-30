@@ -31,10 +31,8 @@ class Claim:
 
 Resolution happens later, once, in one place. Everything good downstream falls out of that single constraint:
 
-- **Auditability** is free. `evidence --name "Eaton"` prints every claim, its
-  confidence, and the URL that supports it.
-- **Conflict becomes data.** Two comparable sources disagreeing marks the field
-  `contested=1` — a review queue instead of a silent coin flip.
+- **Auditability** is free. `evidence --name "Eaton"` prints every claim, its confidence, and the URL that supports it.
+- **Conflict becomes data.** Two comparable sources disagreeing marks the field `contested=1` — a review queue instead of a silent coin flip.
 - **Re-running one source** after fixing a bug loses nothing the others found.
 
 That last one sounds minor until the fourth time you fix a parser and have to decide whether to rebuild everything.

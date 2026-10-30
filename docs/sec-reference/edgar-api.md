@@ -1,5 +1,7 @@
 # Comprehensive API Documentation for SEC EDGAR Database
 
+> The SEC `data.sec.gov` endpoints and response shapes, with the SEC developer FAQ rules (User-Agent, 10 req/s fair access, lag, ticker files).
+
 ## Introduction
 
 The U.S. Securities and Exchange Commission (SEC) provides public access to the Electronic Data Gathering, Analysis, and Retrieval (EDGAR) system through a set of RESTful APIs hosted at `data.sec.gov`. These APIs allow developers to retrieve company submission histories and eXtensible Business Reporting Language (XBRL) financial data in JSON format. The APIs are designed for programmatic access to EDGAR filings, enabling applications such as financial analysis tools, research platforms, and data aggregators.
