@@ -1,5 +1,7 @@
 # EDGAR Public Dissemination Service (PDS) Specification Summary
 
+> Summary of the SEC EDGAR Public Dissemination Service (PDS) specification for real-time filing feeds.
+
 ## Overview
 The EDGAR Public Dissemination Service (PDS) is a system provided by the U.S. Securities and Exchange Commission (SEC) to disseminate public filings in real-time. The PDS Specification (as detailed in `pds_dissemination_spec.pdf`) outlines the technical requirements, protocols, and formats for accessing disseminated EDGAR filings. This service is crucial for applications needing timely access to submissions like 10-Ks, 10-Qs, and 8-Ks.
 
