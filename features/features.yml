@@ -1,64 +1,105 @@
 # =============================================================================
-# features/features.yml — THE FEATURE INDEX for fredgar-ai
+# features/features.yml — THE FEATURE INDEX for bamr87/fredgar-ai
 # =============================================================================
-# kit: verify v0.1.0 (seeded from bamr87/bamr87 templates/verify/)
+# kit: verify v0.1.0 · governance v0.1.0 (bamr87/bamr87 templates/verify/, templates/governance/)
 #
-# One entry per user-facing capability. This file is what an AI agent reads to
-# know what the product DOES, where it lives, how it is documented, which tests
-# and user scenarios prove it, and what evidence exists that it works. The hub
-# aggregates every repo's copy into its fleet features index
-# (bamr87/bamr87 _data/features_index.yml → /features/) and grades coverage:
-#
-#   covered    ≥1 of `tests` / `scenarios` exists on disk
-#   evidenced  ≥1 `evidence` bundle exists (README + screenshots + report)
-#   verified   `verified.date` is set (by an agent, a human, or CI)
-#
-# Schema: features/v1 — a strict SUPERSET of the shape zer0-mistakes,
-# it-journey, and barodybroject already use, so legacy files validate as-is.
-# Validate: python3 <hub>/tools/features_index.py check .
-#
-# Per feature:
-#   id            required  STABLE id, `^[A-Z0-9]+-[0-9]+$` (prefix per repo, e.g. ZER0-001)
-#   title         required  short name
-#   description   required  one or two sentences — what the user can do
-#   implemented   required  true|false (planned features are welcome — they show as gaps)
-#   surface       optional  ui | api | cli | docs | content | infra (default: ui when `link`
-#                           is a route starting with `/`, else infra)
-#   link          optional  the route (`/settings/`) or file that IS the feature
-#   docs          optional  where it is explained (path or URL)
-#   tags          optional  list
-#   date          optional  YYYY-MM-DD introduced
-#   provenance    optional  { introduced_in, pr, commit, issue }
-#   tests         optional  automated test files that pin it (paths)
-#   scenarios     optional  declarative user scenarios (verify/scenarios/*.yml)
-#   evidence      optional  evidence bundle dirs (test/evidence/<slug>/)
-#   screenshots   optional  direct image paths, when a bundle is overkill
-#   verified      optional  { date, by: agent|human|ci, run: <url> } — last verification
-#   deviations    optional  free text: why a MUST row is waived for this feature
+# One entry per user-facing capability, grounded in this repo's PRD, README and
+# code: what it does, where it lives (`link`), where it is explained (`docs`),
+# its `status` (shipped | partial | planned | deprecated | tbd) and the PRD
+# requirements it serves (`prd:`; TBD = not yet traced). Ids are STABLE: never
+# renumber or reuse one. The PRD's "Feature catalog" block is generated from
+# this file — edit here, then run:
+#   python3 <bamr87/bamr87>/tools/governance_lint.py prd-sync . --write
+# Validate: python3 <hub>/tools/governance_lint.py check .  ·  <hub>/tools/features_index.py check .
+# Schema: features/v1 (field reference: bamr87/bamr87 templates/verify/features.template.yml)
 # =============================================================================
 schema: features/v1
 repo: bamr87/fredgar-ai
 
 features:
-  - id: TODO-001
-    title: "TODO: the first thing a user does here"
-    description: "TODO: replace with the primary user-facing capability of fredgar-ai."
+  - id: FREDGAR-001
+    title: "SEC EDGAR sync and ingest"
+    description: "Submissions and company-facts sync, HTM filing ingest, bulk/ZIP loaders (PRD 4.1)."
     implemented: true
+    status: shipped
+    prd: ["§4.1"]
+    surface: infra
+    link: "src/sec_edgar"
+    docs: "PRD.md"
+  - id: FREDGAR-002
+    title: "Financial data warehouse"
+    description: "Company, Filing, Fact, sections/tables, derived metrics, CRM staging, listed issuers and EDGAR sync state models (PRD 4.1)."
+    implemented: true
+    status: shipped
+    prd: ["§4.1"]
+    surface: infra
+    link: "src/warehouse"
+    docs: "PRD.md"
+  - id: FREDGAR-003
+    title: "REST API v1"
+    description: "/api/v1/ companies, filings, facts, sections, tables, derived metrics, peer groups, SIC reference, health, series bundles (PRD 4.1)."
+    implemented: true
+    status: shipped
+    prd: ["§4.1"]
+    surface: api
+    link: "src/api"
+    docs: "PRD.md"
+  - id: FREDGAR-004
+    title: "React dashboard"
+    description: "React 19 + Vite app shell with dashboard and company flows (metadata, EDGAR summary, exploration); not yet full charting or AI chat (PRD 4.1)."
+    implemented: true
+    status: partial
+    prd: ["§4.1"]
     surface: ui
-    link: /
-    docs: README.md
-    tags: [todo]
+    link: "frontend/src"
+    docs: "PRD.md"
     tests: []
     scenarios:
       - verify/scenarios/smoke-home.yml
     evidence: []
+  - id: FREDGAR-005
+    title: "Versioned reference data"
+    description: "Reference JSON (schemas, taxonomies, financial model, SIC, accounting map) under data/reference/ and samples under data/samples/ (PRD 4.1)."
+    implemented: true
+    status: shipped
+    prd: ["§4.1"]
+    surface: content
+    link: "data/reference"
+    docs: "PRD.md"
+  - id: FREDGAR-006
+    title: "Leadership narrative analyzer (optional AI)"
+    description: "analyze_leadership command / POST /companies/{id}/analyze-leadership/ extracting initiatives from filings (PRD 4.1)."
+    implemented: true
+    status: shipped
+    prd: ["§4.1"]
+    surface: api
+    link: "src/warehouse/services/leadership_ai.py"
+    docs: "PRD.md"
+  - id: FREDGAR-007
+    title: "Core product roadmap"
+    description: "Items in PRD 4.2 (from vision, not all built)."
+    implemented: false
+    status: planned
+    prd: ["§4.2"]
+    surface: ui
+    docs: "PRD.md"
+  - id: FREDGAR-008
+    title: "Advanced / growth features"
+    description: "Items in PRD 4.3 (future)."
+    implemented: false
+    status: planned
+    prd: ["§4.3"]
+    surface: ui
+    docs: "PRD.md"
   - id: FREDGAR-009
     title: "Core finance formulas and ratio metrics"
     description: "Twenty standard finance formulas (PV, FV, NPV, WACC, CAPM, EPS, P/E, D/E, ROE, ROA, ROI, current/quick ratio, EBITDA, payback, dividend yield, EV, interest coverage, Sharpe, beta) as pure functions; EPS, ROE, ROA, D/E, current, quick, EBITDA and interest coverage also computed per period as derived metrics from XBRL facts. Implements proposed PRD requirement FR-ANL-001."
     implemented: true
+    status: shipped
+    prd: ["FR-ANL-001"]
     surface: api
-    link: src/warehouse/services/finance_formulas.py
-    docs: docs/finance-formulas.md
+    link: "src/warehouse/services/finance_formulas.py"
+    docs: "docs/finance-formulas.md"
     tags: [metrics, ratios, valuation]
     date: 2026-10-27
     provenance: { introduced_in: "PRD.md §4.6 FR-ANL-001" }

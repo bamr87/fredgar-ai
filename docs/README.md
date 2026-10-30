@@ -24,6 +24,7 @@ Start with the [root README](../README.md) for setup, Docker and tests, and [AGE
 | --- | --- |
 | [`docs/api-and-cli.md`](api-and-cli.md) | How the REST API and the `manage.py` commands fit together — base paths, auth, async jobs and caching flags — with links to the generated route and command reference. |
 | [`docs/architecture.md`](architecture.md) | Django apps, data flow from SEC to the warehouse, and the DB-first JSON caching pattern — for backend developers and operators. |
+| [`docs/constitution.md`](constitution.md) | The rules every change to this repo must satisfy, whoever makes it — a human or an AI agent. Agents read this before [AGENTS.md](../AGENTS.md) conventions, the [PRD](../PRD.md), or the [feature catalog](../features/features.yml). Ratified… |
 | [`docs/distributed-storage.md`](distributed-storage.md) | Proposed (not built) content-addressed EDGAR/FRED extract store: incremental pulls, a local compressed backup and Kaggle clean snapshots. |
 | [`docs/enrichment.md`](enrichment.md) | How the enrichment framework turns a list of organization names into an auditable customer/vendor master: providers propose claims, resolution disposes. |
 | [`docs/finance-formulas.md`](finance-formulas.md) | The 20 core valuation, profitability, liquidity and risk formulas: which run per filing period over XBRL facts as derived metrics, which are pure helpers, and what data each needs. |
@@ -31,6 +32,7 @@ Start with the [root README](../README.md) for setup, Docker and tests, and [AGE
 | [`docs/releasing.md`](releasing.md) | How a fredgar-ai release happens: release-please turns Conventional Commit PR titles into a release PR, and merging that PR tags and publishes it. |
 | [`docs/static-site.md`](static-site.md) | The public static mirror on GitHub Pages: what is generated, the `publish_static_site` pipeline, deployment setup, and cross-links with the interactive app. |
 | [`docs/adr/`](adr/README.md) | Index and format of fredgar-ai's Architecture Decision Records — the decisions that are hard to reverse. |
+| [`docs/amendments/`](amendments/README.md) | The append-only log of changes to [the constitution](constitution.md). |
 | [`docs/notes/`](notes/README.md) | Dated design essays on the enrichment framework, kept for the reasoning behind its rules rather than as reference. |
 
 ### `docs/reference/`
