@@ -81,3 +81,36 @@ def test_recompute_is_idempotent():
     first = DerivedMetric.objects.filter(company=co).count()
     compute_derived_metrics(co)
     assert DerivedMetric.objects.filter(company=co).count() == first
+
+
+@pytest.mark.django_db
+def test_cheat_sheet_kpis_computed_from_facts():
+    """ROE, ROA, D/E, current, quick, EPS, EBITDA and interest coverage from XBRL facts."""
+    co = Company.objects.create(cik="0000000099", name="RatioCo")
+    fy_end = FY["period_end"]
+    instant = {"period_start": None, "period_end": fy_end}
+    _fact(co, "NetIncomeLoss", "150")
+    _fact(co, "WeightedAverageNumberOfSharesOutstandingBasic", "50", unit="shares")
+    _fact(co, "InterestExpense", "20")
+    _fact(co, "IncomeTaxExpenseBenefit", "30")
+    _fact(co, "DepreciationDepletionAndAmortization", "50")
+    _fact(co, "OperatingIncomeLoss", "200")
+    _fact(co, "StockholdersEquity", "1000", **instant)
+    _fact(co, "Assets", "3000", **instant)
+    _fact(co, "LongTermDebt", "500", **instant)
+    _fact(co, "AssetsCurrent", "300", **instant)
+    _fact(co, "InventoryNet", "60", **instant)
+    _fact(co, "LiabilitiesCurrent", "150", **instant)
+
+    compute_derived_metrics(co)
+    got = {m.key: m for m in DerivedMetric.objects.filter(company=co, period_end=fy_end)}
+    assert got["return_on_equity"].value == Decimal("0.150000")  # 150 / 1000
+    assert got["return_on_assets"].value == Decimal("0.050000")  # 150 / 3000
+    assert got["debt_to_equity"].value == Decimal("0.500000")  # 500 / 1000
+    assert got["current_ratio"].value == Decimal("2.000000")  # 300 / 150
+    assert got["quick_ratio"].value == Decimal("1.600000")  # (300 - 60) / 150
+    assert got["eps_basic_computed"].value == Decimal("3.000000")  # 150 / 50
+    assert got["interest_coverage"].value == Decimal("10.000000")  # 200 / 20
+    assert got["ebitda"].value == Decimal("250.000000")  # 150 + 20 + 30 + 50
+    assert got["ebitda"].unit == "USD"
+    assert got["return_on_equity"].unit == "ratio"

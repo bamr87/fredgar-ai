@@ -163,6 +163,10 @@ Format: *As a [user], I want [capability] so that [benefit].*
 
 11–16. Accounts, export, alerts, AI chat, collaboration, third-party APIs → **Future** (see 4.3).
 
+### 4.6 Proposed requirements
+
+- **FR-ANL-001 — Core finance formulas (proposed, 2026-10-27).** The system provides the 20 standard valuation, profitability, liquidity and risk formulas (PV, FV, NPV, WACC, CAPM, EPS, P/E, D/E, ROE, ROA, ROI, current ratio, quick ratio, EBITDA, payback period, dividend yield, EV, interest coverage, Sharpe ratio, beta) as tested pure functions, and computes the ones derivable from XBRL facts (EPS, ROE, ROA, D/E, current, quick, EBITDA, interest coverage) per filing period as derived metrics. Formulas that need market prices or return series stay caller-supplied until price data is in scope (§4.3). Advances roadmap item 3 and user story 5. Feature: FREDGAR-009; detail: [`docs/finance-formulas.md`](docs/finance-formulas.md).
+
 ---
 
 ## Feature catalog
@@ -180,6 +184,7 @@ Every user-facing capability has a stable id in the feature catalog [`features/f
 | [FREDGAR-006](features/features.yml) | Leadership narrative analyzer (optional AI) | shipped | [`src/warehouse/services/leadership_ai.py`](src/warehouse/services/leadership_ai.py) · [`PRD.md`](PRD.md) | §4.1 |
 | [FREDGAR-007](features/features.yml) | Core product roadmap | planned | [`PRD.md`](PRD.md) | §4.2 |
 | [FREDGAR-008](features/features.yml) | Advanced / growth features | planned | [`PRD.md`](PRD.md) | §4.3 |
+| [FREDGAR-009](features/features.yml) | Core finance formulas and ratio metrics | shipped | [`src/warehouse/services/finance_formulas.py`](src/warehouse/services/finance_formulas.py) · [`docs/finance-formulas.md`](docs/finance-formulas.md) | FR-ANL-001 |
 
 **Requirement → feature trace**
 
@@ -188,6 +193,7 @@ Every user-facing capability has a stable id in the feature catalog [`features/f
 | §4.1 | FREDGAR-001, FREDGAR-002, FREDGAR-003, FREDGAR-004, FREDGAR-005, FREDGAR-006 |
 | §4.2 | FREDGAR-007 |
 | §4.3 | FREDGAR-008 |
+| FR-ANL-001 | FREDGAR-009 |
 <!-- features:end -->
 
 ## 5. Non-functional requirements
