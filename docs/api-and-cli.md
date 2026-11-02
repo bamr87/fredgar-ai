@@ -15,7 +15,7 @@ Regenerate both with `python3 tools/gen_reference.py --write` after changing a r
 - **Auth:** token and session authentication. Reads are public; writes and every SEC-hitting action need a staff user (`api.permissions.IsAdminOrReadOnly`, the DRF default in `src/config/settings.py`).
 - **OpenAPI:** `drf-spectacular` serves the OpenAPI 3 schema at `/api/v1/schema/` and Swagger UI at `/api/v1/docs/`. Responses are JSON; the browsable API renderer is added only when `DJANGO_DEBUG` is on.
 - **Throttling:** anonymous and user rates apply everywhere (`THROTTLE_ANON`, `THROTTLE_USER`), and the SEC-hitting actions carry the scoped `sec` rate (`THROTTLE_SEC`, default `20/min`).
-- **Async jobs:** the sync actions accept `?async=true` and answer `202` with a `task_id`; poll `GET /api/v1/tasks/{task_id}/` for the Celery result.
+- **Async jobs:** the sync actions accept `?async=true` and answer `202` with a `task_id`; poll `GET /api/v1/tasks/{task_id}/` for the Celery result (staff only, the same users who can dispatch the job).
 - **SEC caching:** reads go DB first and only call SEC when nothing is cached; `?force_refresh=true` refetches on the endpoints whose **Params** column lists it. See [architecture.md](architecture.md).
 - **SEC User-Agent:** SEC requires a contact email. The server uses `USER_AGENT_EMAIL`; a request may override it with the `X-Sec-User-Agent-Email` header.
 
