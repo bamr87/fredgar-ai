@@ -99,7 +99,7 @@ The market for financial data and filing analysis is crowded (aggregators, termi
 
 **Optional / peripheral**
 
-- **Optional AI**: Leadership narrative analyzer (`warehouse/services/leadership_ai.py`, `analyze_leadership` command / `POST /companies/{id}/analyze-leadership/`) that extracts initiatives, verbatim quotes, and direction **strictly from ingested SEC filing excerpts** into `LeadershipAnalysis`. Gated behind `ENABLE_AI_ANALYSIS` (off by default; `NoopAnalyzer` no-op), with the `anthropic` SDK as a lazy optional dependency (`requirements-ai.txt`)—not part of the core web API or PRD MVP for the Django app.
+- **Optional AI**: Leadership narrative analyzer (`warehouse/services/leadership_ai.py`, `analyze_leadership` command / `POST /companies/{id}/analyze-leadership/`) that extracts initiatives, verbatim quotes, and direction **strictly from ingested SEC filing excerpts** into `LeadershipAnalysis`. Gated behind `ENABLE_AI_ANALYSIS` (on by default, `AI_ANALYSIS_MODEL=claude-opus-5-5`; degrades to the `NoopAnalyzer` no-op unless the SDK and a credential exist), with the `anthropic` SDK as a lazy optional dependency (`requirements-ai.txt`)—not part of the core web API or PRD MVP for the Django app.
 
 ### 4.2 Roadmap: core product (from vision, not all built)
 
