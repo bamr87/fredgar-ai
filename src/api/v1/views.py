@@ -7,6 +7,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -101,7 +102,13 @@ class HealthReadyView(APIView):
 
 
 class TaskStatusView(APIView):
-    """Celery task state for an async job dispatched by a sync action."""
+    """Celery task state for an async job dispatched by a sync action.
+
+    Staff only: only staff can dispatch sync actions, and results/errors can
+    carry internal detail, so anonymous and non-staff callers get 401/403.
+    """
+
+    permission_classes = [IsAdminUser]
 
     def get(self, request, task_id):
         from celery.result import AsyncResult
