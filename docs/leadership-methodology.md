@@ -59,12 +59,15 @@ Output is validated against a JSON schema (structured outputs), persisted as a `
 
 **Auth & setup.** AI analysis is on by default; you only need the SDK and a credential to make it live. Authentication is **token-first** — a Claude Code OAuth token is preferred and sent as a Bearer token (with the `oauth-2025-04-20` beta header); an API key is the fallback. Set **only one** — the API returns 401 if both are present.
 
+**Model.** `AI_ANALYSIS_MODEL` must be one of the fleet's allowed Claude models: `claude-opus-5-5` (the default), `claude-sonnet-5-5` or `claude-haiku-5-5`. Any other value disables the analysis (it degrades to the no-op analyzer) and logs a WARNING naming the bad value and the allowed ids; a disallowed model id is never sent to the API.
+
 ```bash
 pip install -r requirements-ai.txt                    # installs the optional `anthropic` SDK
 export CLAUDE_CODE_OAUTH_TOKEN=$(claude setup-token)  # preferred: Claude Code OAuth token
 # or, instead of the token:
 # export ANTHROPIC_API_KEY=sk-...                     # fallback: metered API key
 # ENABLE_AI_ANALYSIS defaults to true; AI_ANALYSIS_MODEL defaults to claude-opus-5-5
+# AI_ANALYSIS_MODEL allowed: claude-opus-5-5 | claude-sonnet-5-5 | claude-haiku-5-5 (else no-op + WARNING)
 ```
 
 This is narrative extraction with citations, **not** an opinion about people, and not investment/HR advice. Always verify quotes and initiatives against the cited filings.

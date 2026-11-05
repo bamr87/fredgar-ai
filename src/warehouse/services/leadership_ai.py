@@ -36,6 +36,15 @@ MAX_PASSAGES = 12
 MAX_PASSAGE_CHARS = 2000
 MAX_OUTPUT_TOKENS = 6000
 
+# Claude model ids the fleet allows (bamr87 constitution § 13.3; mirrors the hub's
+# ``_data/fleet.yml`` ``ai_models.allowed.anthropic``). Anything else is never sent.
+DEFAULT_MODEL = "claude-opus-5-5"
+ALLOWED_MODELS: tuple[str, ...] = (
+    "claude-opus-5-5",
+    "claude-sonnet-5-5",
+    "claude-haiku-5-5",
+)
+
 # Structured-output schema. ``output_config.format`` guarantees the first content
 # block is text containing JSON valid against this schema.
 ANALYSIS_SCHEMA: dict[str, Any] = {
@@ -136,9 +145,12 @@ class AnthropicAnalyzer:
     backend = "anthropic"
 
     def __init__(self, *, client: Any | None = None, model: str | None = None) -> None:
-        self.model_name: str = str(
-            model or getattr(settings, "AI_ANALYSIS_MODEL", None) or "claude-opus-5-5"
-        )
+        self.model_name: str = str(model or _configured_model())
+        if self.model_name not in ALLOWED_MODELS:
+            raise ValueError(
+                f"AI analysis model {self.model_name!r} is not allowed; "
+                f"use one of: {', '.join(ALLOWED_MODELS)}."
+            )
         self._client = client
 
     def _get_client(self) -> Any:
@@ -211,6 +223,11 @@ def _resolve_credential() -> tuple[str, str]:
     return token, api_key
 
 
+def _configured_model() -> str:
+    """The model id from ``settings.AI_ANALYSIS_MODEL``, or the default when unset/empty."""
+    return str(getattr(settings, "AI_ANALYSIS_MODEL", None) or DEFAULT_MODEL)
+
+
 def _credentials_present() -> bool:
     token, api_key = _resolve_credential()
     return bool(token or api_key)
@@ -223,11 +240,22 @@ def get_leadership_analyzer(*, client: Any | None = None) -> LeadershipAnalyzer:
     when it is on with no credential configured (and no client injected) we degrade to
     ``NoopAnalyzer`` so a credential-less checkout never errors or makes a surprise API call.
     Configure a Claude Code OAuth token (``CLAUDE_CODE_OAUTH_TOKEN``) or ``ANTHROPIC_API_KEY``
-    — and install ``requirements-ai.txt`` — to enable live analysis.
+    — and install ``requirements-ai.txt`` — to enable live analysis. A configured
+    ``AI_ANALYSIS_MODEL`` outside ``ALLOWED_MODELS`` also degrades to ``NoopAnalyzer``,
+    with a WARNING naming the bad value, so a disallowed model id is never called.
     """
     if not getattr(settings, "ENABLE_AI_ANALYSIS", False):
         return NoopAnalyzer()
     if getattr(settings, "AI_ANALYSIS_BACKEND", "anthropic") != "anthropic":
+        return NoopAnalyzer()
+    model = _configured_model()
+    if model not in ALLOWED_MODELS:
+        logger.warning(
+            "AI analysis is enabled but AI_ANALYSIS_MODEL=%r is not an allowed Claude model; "
+            "using NoopAnalyzer. Allowed: %s.",
+            model,
+            ", ".join(ALLOWED_MODELS),
+        )
         return NoopAnalyzer()
     if client is None and not _credentials_present():
         logger.info(
