@@ -166,6 +166,10 @@ Format: *As a [user], I want [capability] so that [benefit].*
 ### 4.6 Proposed requirements
 
 - **FR-ANL-001 — Core finance formulas (proposed, 2026-10-27).** The system provides the 20 standard valuation, profitability, liquidity and risk formulas (PV, FV, NPV, WACC, CAPM, EPS, P/E, D/E, ROE, ROA, ROI, current ratio, quick ratio, EBITDA, payback period, dividend yield, EV, interest coverage, Sharpe ratio, beta) as tested pure functions, and computes the ones derivable from XBRL facts (EPS, ROE, ROA, D/E, current, quick, EBITDA, interest coverage) per filing period as derived metrics. Formulas that need market prices or return series stay caller-supplied until price data is in scope (§4.3). Advances roadmap item 3 and user story 5. Feature: FREDGAR-009; detail: [`docs/finance-formulas.md`](docs/finance-formulas.md).
+- **FR-OWN-001 — Institutional holdings (proposed, 2026-11-02).** The system parses 13F-HR information tables into holdings with provenance and reports each manager's positions and quarter-over-quarter changes (new, closed, increased, decreased), plus the institutional holders of a company. Feature: FREDGAR-010; issue [#110](https://github.com/bamr87/fredgar-ai/issues/110).
+- **FR-ALR-001 — Watchlist and new-filing alerts (proposed, 2026-11-02).** A user can watch companies and form types and receives in-app alerts for new filings, detected by a scheduled, rate-limited, DB-first poll of submissions. Advances §4.3 Alerts. Feature: FREDGAR-011; issue [#111](https://github.com/bamr87/fredgar-ai/issues/111).
+- **FR-MAC-001 — FRED transforms and vintages (proposed, 2026-11-02).** Series observations can be returned with FRED's standard unit transforms and frequency aggregation, and optionally as of a vintage date. Feature: FREDGAR-012; issue [#112](https://github.com/bamr87/fredgar-ai/issues/112).
+- **FR-ANL-002 — Company metric vs macro overlay (proposed, 2026-11-02).** A company metric or fact can be charted against a FRED series on an aligned time axis with a correlation summary and CSV export. Advances roadmap item 4. Feature: FREDGAR-013; issue [#113](https://github.com/bamr87/fredgar-ai/issues/113).
 
 ---
 
@@ -185,6 +189,10 @@ Every user-facing capability has a stable id in the feature catalog [`features/f
 | [FREDGAR-007](features/features.yml) | Core product roadmap | planned | [`PRD.md`](PRD.md) | §4.2 |
 | [FREDGAR-008](features/features.yml) | Advanced / growth features | planned | [`PRD.md`](PRD.md) | §4.3 |
 | [FREDGAR-009](features/features.yml) | Core finance formulas and ratio metrics | shipped | [`src/warehouse/services/finance_formulas.py`](src/warehouse/services/finance_formulas.py) · [`docs/finance-formulas.md`](docs/finance-formulas.md) | FR-ANL-001 |
+| [FREDGAR-010](features/features.yml) | Institutional holdings (13F) | planned | [`PRD.md`](PRD.md) | FR-OWN-001 |
+| [FREDGAR-011](features/features.yml) | Watchlist and new-filing alerts | planned | [`PRD.md`](PRD.md) | FR-ALR-001 |
+| [FREDGAR-012](features/features.yml) | FRED transforms and vintages | planned | [`PRD.md`](PRD.md) | FR-MAC-001 |
+| [FREDGAR-013](features/features.yml) | Company metric vs macro overlay | planned | [`PRD.md`](PRD.md) | FR-ANL-002 |
 
 **Requirement → feature trace**
 
@@ -194,6 +202,10 @@ Every user-facing capability has a stable id in the feature catalog [`features/f
 | §4.2 | FREDGAR-007 |
 | §4.3 | FREDGAR-008 |
 | FR-ANL-001 | FREDGAR-009 |
+| FR-OWN-001 | FREDGAR-010 |
+| FR-ALR-001 | FREDGAR-011 |
+| FR-MAC-001 | FREDGAR-012 |
+| FR-ANL-002 | FREDGAR-013 |
 <!-- features:end -->
 
 ## 5. Non-functional requirements

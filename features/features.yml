@@ -108,3 +108,43 @@ features:
       - tests/warehouse/test_metrics.py
     scenarios: []
     evidence: []
+  - id: FREDGAR-010
+    title: "Institutional holdings (13F)"
+    description: "13F-HR holdings per manager with quarter-over-quarter changes and a company's institutional holders."
+    implemented: false
+    status: planned
+    prd: ["FR-OWN-001"]
+    surface: api
+    docs: "PRD.md"
+    date: 2026-11-02
+    provenance: { introduced_in: "PRD.md §4.6 FR-OWN-001", issue: "https://github.com/bamr87/fredgar-ai/issues/110" }
+  - id: FREDGAR-011
+    title: "Watchlist and new-filing alerts"
+    description: "Watch companies and forms; in-app alerts for new filings from a scheduled DB-first submissions poll."
+    implemented: false
+    status: planned
+    prd: ["FR-ALR-001"]
+    surface: api
+    docs: "PRD.md"
+    date: 2026-11-02
+    provenance: { introduced_in: "PRD.md §4.6 FR-ALR-001", issue: "https://github.com/bamr87/fredgar-ai/issues/111" }
+  - id: FREDGAR-012
+    title: "FRED transforms and vintages"
+    description: "FRED unit transforms, frequency aggregation and optional vintage (ALFRED) views on series observations."
+    implemented: false
+    status: planned
+    prd: ["FR-MAC-001"]
+    surface: api
+    docs: "PRD.md"
+    date: 2026-11-02
+    provenance: { introduced_in: "PRD.md §4.6 FR-MAC-001", issue: "https://github.com/bamr87/fredgar-ai/issues/112" }
+  - id: FREDGAR-013
+    title: "Company metric vs macro overlay"
+    description: "Chart a company metric against a FRED series on an aligned time axis with correlation and CSV export."
+    implemented: false
+    status: planned
+    prd: ["FR-ANL-002"]
+    surface: api
+    docs: "PRD.md"
+    date: 2026-11-02
+    provenance: { introduced_in: "PRD.md §4.6 FR-ANL-002", issue: "https://github.com/bamr87/fredgar-ai/issues/113" }
