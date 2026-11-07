@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/bamr87/fredgar-ai/compare/v0.2.0...v0.2.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* **api:** require staff auth on GET /api/v1/tasks/{id}/ ([6a7b20a](https://github.com/bamr87/fredgar-ai/commit/6a7b20a01bd0574530d33de8562724ea594ed358))
+
 ## [0.2.0](https://github.com/bamr87/fredgar-ai/compare/v0.1.0...v0.2.0) (2026-10-28)
 
 
