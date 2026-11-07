@@ -14,6 +14,7 @@ This repo uses the standardized [bamr87 release pipeline](https://github.com/bam
 
 - Config: [`release-please-config.json`](../release-please-config.json) (`release-type: simple`, changelog `CHANGELOG.md`).
 - Current version: [`.release-please-manifest.json`](../.release-please-manifest.json).
+- The markdown prose gate (`make prose`, CI's `markdown-oneline` job) skips `CHANGELOG.md`: release-please writes it in its own wrapped format, so a reflow would be overwritten on the next release and editing it by hand is forbidden anyway.
 
 ## Setup
 

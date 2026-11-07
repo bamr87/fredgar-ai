@@ -3,7 +3,9 @@
 # soft-wrapped prose. This is the Liquid-safe surgical unwrapper — it only joins
 # wrapped prose and leaves Liquid/HTML/tables/code/front-matter untouched.
 #
-# Fix locally:  python3 tools/unwrap-prose.py --write
+# Check locally: make prose       Fix locally: make prose-fix
+# The exclude list (CHANGELOG.md is release-please's, SCHEMA.md the schema
+# kit's) lives once, in the Makefile's PROSE_EXCLUDES; this job runs it too.
 name: markdown-oneline
 
 on:
@@ -31,6 +33,5 @@ jobs:
           python-version: "3.x"
       - name: Check one paragraph per line
         run: |
-          python3 tools/unwrap-prose.py --check \
-            --exclude '(^|/)SCHEMA\.md$' --exclude '(^|/)CHANGELOG\.md$' \
-          || { echo "::error::Wrapped markdown prose found. Run: python3 tools/unwrap-prose.py --write"; exit 1; }
+          make prose \
+          || { echo "::error::Wrapped markdown prose found. Run: make prose-fix"; exit 1; }
