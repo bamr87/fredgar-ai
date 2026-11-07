@@ -109,6 +109,51 @@ def test_enabled_returns_anthropic_analyzer():
     assert analyzer.enabled is True
 
 
+# --- model allowlist ---
+
+
+@override_settings(ENABLE_AI_ANALYSIS=True, AI_ANALYSIS_MODEL="claude-opsu-typo")
+@pytest.mark.django_db
+def test_disallowed_model_degrades_to_noop_with_warning(caplog):
+    fake = FakeAnthropic()
+    with caplog.at_level("WARNING", logger="warehouse.services.leadership_ai"):
+        analyzer = get_leadership_analyzer(client=fake)
+    assert isinstance(analyzer, NoopAnalyzer)
+    warnings = [r for r in caplog.records if r.levelname == "WARNING"]
+    assert any("claude-opsu-typo" in r.getMessage() for r in warnings)
+    assert any("claude-opus-5-5" in r.getMessage() for r in warnings)
+    # The bad id never reaches the client.
+    co = _company_with_text()
+    analyze_company_leadership(co, client=fake)
+    assert fake.calls == {}
+
+
+# The fleet's allowed Claude ids (bamr87 constitution § 13.3), pinned here on purpose.
+FLEET_ALLOWED_MODELS = ("claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5")
+
+
+def test_allowed_models_match_fleet_policy():
+    from warehouse.services import leadership_ai
+
+    assert leadership_ai.ALLOWED_MODELS == FLEET_ALLOWED_MODELS
+
+
+@pytest.mark.parametrize("model", FLEET_ALLOWED_MODELS)
+@pytest.mark.django_db
+def test_each_allowed_model_yields_anthropic_analyzer(model):
+    with override_settings(ENABLE_AI_ANALYSIS=True, AI_ANALYSIS_MODEL=model):
+        analyzer = get_leadership_analyzer(client=FakeAnthropic())
+    assert isinstance(analyzer, AnthropicAnalyzer)
+    assert analyzer.model_name == model
+
+
+def test_explicit_disallowed_model_raises():
+    with pytest.raises(ValueError, match="not-a-model"):
+        AnthropicAnalyzer(client=FakeAnthropic(), model="not-a-model")
+    with pytest.raises(ValueError, match="gpt-4"):
+        AnthropicAnalyzer(client=FakeAnthropic(), model="gpt-4")
+
+
 # --- passages / grounding ---
 
 
