@@ -28,3 +28,21 @@ updates:
     groups:
       actions:
         patterns: ["*"]
+
+  # Base images in Dockerfile / Dockerfile.frontend.
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      docker:
+        patterns: ["*"]
+
+  # Images referenced in docker-compose.yml.
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      docker-compose:
+        patterns: ["*"]

@@ -8,6 +8,10 @@ on:
 # One CI run per ref at a time: Dependabot merge trains land several pushes
 # within seconds (4 within 16s on 2026-07-16) and each got a full 8-job run.
 # Superseded runs are cancelled; only the newest commit on the ref is tested.
+# Least-privilege token for every job (no job needs to write).
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
