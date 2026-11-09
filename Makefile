@@ -7,7 +7,12 @@ export DJANGO_SETTINGS_MODULE := config.settings_test
 COV_ARGS := --cov=warehouse --cov=config --cov=sec_edgar --cov=public_data --cov=api \
 	--cov-report=term-missing --cov-fail-under=50
 
-.PHONY: help install lint format typecheck test migrations check audit precommit all
+# The markdown prose gate's exclusions, stated once: the markdown-oneline workflow
+# runs `make prose`. CHANGELOG.md is written by release-please and SCHEMA.md by
+# the schema kit, so neither may be reflowed by hand.
+PROSE_EXCLUDES := --exclude '(^|/)SCHEMA\.md$$' --exclude '(^|/)CHANGELOG\.md$$'
+
+.PHONY: help install lint format typecheck test migrations check audit precommit all prose prose-fix
 
 help:  ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
@@ -36,6 +41,12 @@ check:  ## Django system check
 
 audit:  ## Dependency vulnerability scan (advisory)
 	pip-audit || true
+
+prose:  ## Markdown one-paragraph-per-line gate (matches CI markdown-oneline)
+	python3 tools/unwrap-prose.py --check $(PROSE_EXCLUDES)
+
+prose-fix:  ## Unwrap soft-wrapped markdown (never touches CHANGELOG.md / SCHEMA.md)
+	python3 tools/unwrap-prose.py --write $(PROSE_EXCLUDES)
 
 precommit:  ## Run all pre-commit hooks on the repo
 	pre-commit run --all-files

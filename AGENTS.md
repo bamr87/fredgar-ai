@@ -39,7 +39,7 @@ ruff format src tests                               # format
 make test                                           # pytest with the CI coverage gate (--cov-fail-under=50)
 python3 tools/gen_reference.py --write              # regenerate docs/reference/ (--check to verify)
 python3 tools/docs_index.py --write                 # regenerate the docs/README.md index
-python3 tools/unwrap-prose.py --check               # markdown: one paragraph per line (--write to fix)
+make prose                                          # markdown: one paragraph per line, as CI runs it (make prose-fix to fix)
 
 # enrichment chain (from src/; see docs/enrichment.md)
 python manage.py enrich_init --dataset X --csv ../data/list.csv --mapping manufacturing_v1
@@ -86,7 +86,7 @@ Every route and command is listed in the generated [`docs/reference/`](docs/refe
 - **Models:** new persisted state goes in `warehouse` (no other app defines models); run `makemigrations` — CI fails on a missing migration.
 - **Tests never hit the network:** mock SEC/FRED with `responses`. CI does not deselect the `requires_network` marker, so never rely on it to keep a live call out of CI.
 - **Generated reference:** after changing a route, a view or command docstring, or a command's options, run `python3 tools/gen_reference.py --write`; `tests/test_docs_reference.py` fails while it is stale.
-- **Markdown:** one paragraph per line (`python3 tools/unwrap-prose.py --check`; CI enforces it).
+- **Markdown:** one paragraph per line (`make prose`, which CI runs; `make prose-fix` to fix). Both skip `CHANGELOG.md` (release-please) and `SCHEMA.md`; calling the script directly without those excludes would rewrite `CHANGELOG.md`.
 
 ## Architecture
 
