@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/bamr87/fredgar-ai/compare/v0.2.1...v0.2.2) (2026-11-09)
+
+
+### Bug Fixes
+
+* **ai:** validate AI_ANALYSIS_MODEL against the allowed Claude models ([710cfd4](https://github.com/bamr87/fredgar-ai/commit/710cfd4eda45f8edffd530bc3db9b7950232e5e1)), closes [#109](https://github.com/bamr87/fredgar-ai/issues/109)
+
 ## [0.2.1](https://github.com/bamr87/fredgar-ai/compare/v0.2.0...v0.2.1) (2026-11-06)
 
 
