@@ -82,13 +82,13 @@ From the repo root, PostgreSQL + the API on port 8000, with `./data` mounted for
 
 ```bash
 docker compose up -d --build
-curl -s http://127.0.0.1:8000/api/v1/health/
+curl -s http://127.0.0.1:8000/healthz         # liveness; /readyz checks db, cache and broker; /version names the build
 docker compose --profile dev up -d --build    # + Vite dev UI on :5173, proxying /api to the API container
 docker compose --profile prod up -d --build   # + static UI behind nginx on :8080, same-origin /api
 docker compose --profile ci run --rm test     # CI-style checks against Postgres
 ```
 
-Optional env (shell or a `.env` next to `docker-compose.yml`): `DJANGO_SECRET_KEY`, `USER_AGENT_EMAIL`, `DJANGO_DEBUG`, `CORS_ALLOWED_ORIGINS`. The container scripts are described in [`docker/README.md`](docker/README.md). A single-image build without Compose also works: `docker build -t fredgar-ai .` then `docker run -p 8000:8000 -e USER_AGENT_EMAIL=you@example.com fredgar-ai`.
+Optional env (shell or a `.env` next to `docker-compose.yml`): `DJANGO_SECRET_KEY`, `USER_AGENT_EMAIL`, `DJANGO_DEBUG`, `CORS_ALLOWED_ORIGINS`. The container scripts are described in [`docker/README.md`](docker/README.md). A single-image build without Compose also works: `docker build -t fredgar-ai .` (add `--build-arg GIT_SHA=$(git rev-parse --short HEAD) --build-arg BUILT_AT=$(date -u +%FT%TZ)` to fill `/version`) then `docker run -p 8000:8000 -e USER_AGENT_EMAIL=you@example.com fredgar-ai`.
 
 ## Documentation
 

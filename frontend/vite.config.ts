@@ -20,6 +20,11 @@ export default defineConfig(({ mode }) => {
           target: apiProxyTarget,
           changeOrigin: true,
         },
+        // Root probes (UPS-BE-10/11); exact paths so no SPA route is captured.
+        '^/(healthz|readyz|version)$': {
+          target: apiProxyTarget,
+          changeOrigin: true,
+        },
       },
     },
   }

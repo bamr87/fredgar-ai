@@ -12,6 +12,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ /app/src/
+# GET /version reads the release-please version from here (src/api/v1/views.py).
+COPY .release-please-manifest.json /app/
 
 FROM base AS test
 
@@ -51,6 +53,14 @@ ENV GUNICORN_WORKERS=2
 
 WORKDIR /app/src
 
+# Build identity served by GET /version (`unknown` when not passed at build time).
+ARG GIT_SHA=""
+ARG BUILT_AT=""
+ENV GIT_SHA=${GIT_SHA} BUILT_AT=${BUILT_AT}
+
 EXPOSE 8000
+# Readiness (db, cache, Celery broker) via stdlib python: the slim image has no curl.
+HEALTHCHECK --interval=10s --timeout=5s --start-period=40s --retries=5 \
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/readyz', timeout=4)"]
 ENTRYPOINT ["/entrypoint-web.sh"]
 CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
