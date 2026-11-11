@@ -115,7 +115,7 @@ Build, test and lint commands are in [Quick start](#quick-start); `make all` run
 
 ## Contributing
 
-Contributions are welcome via pull request. Use [Conventional Commits](https://www.conventionalcommits.org/) and keep the CI checks green. See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow; AI agents start with [AGENTS.md](AGENTS.md).
+Contributions are welcome via pull request. Use [Conventional Commits](https://www.conventionalcommits.org/) and keep the CI checks green. See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow; AI agents start with [AGENTS.md](AGENTS.md). Report security issues privately as described in [SECURITY.md](SECURITY.md), never in a public issue.
 
 ## Changelog
 
