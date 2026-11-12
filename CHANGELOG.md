@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.3](https://github.com/bamr87/fredgar-ai/compare/v0.2.2...v0.2.3) (2026-11-12)
+
+
+### Bug Fixes
+
+* **release:** publish to PyPI from a top-level job for trusted publishing ([9c600df](https://github.com/bamr87/fredgar-ai/commit/9c600df2f0df670c18c3ba57bbbc233a0c48eecf))
+* **release:** publish to PyPI from a top-level job for trusted publishing ([e7be030](https://github.com/bamr87/fredgar-ai/commit/e7be0308d21ced27d97095493f4df887c634be83))
+
 ## [0.2.2](https://github.com/bamr87/fredgar-ai/compare/v0.2.1...v0.2.2) (2026-11-09)
 
 
