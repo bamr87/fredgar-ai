@@ -102,7 +102,7 @@ services:
   tika:
     profiles:
       - tika
-    image: apache/tika:2.9.2.1
+    image: apache/tika:4.2.0-1
     ports:
       - "127.0.0.1:${FREDGAR_TIKA_PORT:-9998}:9998"
 
@@ -135,7 +135,7 @@ services:
   frontend:
     profiles:
       - dev
-    image: node:24-trixie-slim
+    image: node:25-trixie-slim
     working_dir: /app
     volumes:
       - ./frontend:/app
