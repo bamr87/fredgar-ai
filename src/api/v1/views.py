@@ -1,5 +1,10 @@
+import json
 import logging
+import os
+from pathlib import Path
 
+from django.conf import settings
+from django.core.cache import cache
 from django.db import connection
 from django.db.models import Count
 from django.db.models.functions import TruncYear
@@ -72,33 +77,114 @@ def _wants_async(request) -> bool:
     return str(raw).strip().lower() in ("1", "true", "yes", "on")
 
 
-class HealthView(APIView):
-    """Liveness probe; does not check the database."""
+_NO_STORE = {"Cache-Control": "no-store"}
+
+
+class _ProbeView(APIView):
+    """Base for the UPS-BE-10/11 probes: anonymous, unthrottled, never cached."""
 
     authentication_classes: list = []
     permission_classes: list = []
-    throttle_classes: list = []  # liveness must never be throttled
+    throttle_classes: list = []  # probes must never be throttled
+
+
+class HealthView(_ProbeView):
+    """Liveness probe (``/healthz``, alias ``/api/v1/health/``); touches no dependency."""
 
     def get(self, request):
-        return Response({"status": "ok"})
+        return Response({"status": "ok"}, headers=_NO_STORE)
 
 
-class HealthReadyView(APIView):
-    """Readiness: verifies app can reach the default database."""
+def _probe_error(exc: Exception) -> str:
+    # Probes are public, so name the failure class only; the detail goes to the log.
+    return f"error: {type(exc).__name__}"
 
-    authentication_classes: list = []
-    permission_classes: list = []
-    throttle_classes: list = []  # readiness must never be throttled
 
-    def get(self, request):
+def _check_db() -> str:
+    # A round trip, not just ensure_connection(): with persistent connections
+    # (conn_max_age) an open-but-dead connection would otherwise report ok.
+    try:
+        connection.ensure_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+    except Exception as exc:
+        logger.warning("readiness: database check failed: %s", exc)
+        return _probe_error(exc)
+    return "ok"
+
+
+def _check_cache() -> str:
+    try:
+        cache.set("readyz:probe", "1", timeout=5)
+        if cache.get("readyz:probe") != "1":
+            return "error: cache read-back mismatch"
+    except Exception as exc:
+        logger.warning("readiness: cache check failed: %s", exc)
+        return _probe_error(exc)
+    return "ok"
+
+
+def _check_broker() -> str:
+    """Ping the Celery Redis broker; ``skipped`` when tasks run eagerly or it is not Redis."""
+    url = getattr(settings, "CELERY_BROKER_URL", "") or ""
+    if getattr(settings, "CELERY_TASK_ALWAYS_EAGER", False) or not url.startswith(
+        ("redis://", "rediss://")
+    ):
+        return "skipped"
+    try:
+        import redis
+
+        client = redis.Redis.from_url(url, socket_connect_timeout=1, socket_timeout=1)
         try:
-            connection.ensure_connection()
-        except Exception:
-            return Response(
-                {"status": "unready", "checks": {"database": False}},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE,
-            )
-        return Response({"status": "ok", "checks": {"database": True}})
+            client.ping()
+        finally:
+            client.close()
+    except Exception as exc:
+        logger.warning("readiness: broker check failed: %s", exc)
+        return _probe_error(exc)
+    return "ok"
+
+
+class HealthReadyView(_ProbeView):
+    """Readiness probe (``/readyz``, alias ``/api/v1/health/ready/``): database, cache and Celery broker.
+
+    200 ``{"status": "ok", "checks": {...}}`` when every check is ``ok`` or ``skipped``;
+    503 ``{"status": "degraded", ...}`` with an error string under each failed check.
+    """
+
+    def get(self, request):
+        checks = {"db": _check_db(), "cache": _check_cache(), "broker": _check_broker()}
+        healthy = all(v in ("ok", "skipped") for v in checks.values())
+        return Response(
+            {"status": "ok" if healthy else "degraded", "checks": checks},
+            status=status.HTTP_200_OK if healthy else status.HTTP_503_SERVICE_UNAVAILABLE,
+            headers=_NO_STORE,
+        )
+
+
+def _release_version() -> str:
+    """The release-please version (manifest ``"."`` key), ``unknown`` if the manifest is absent."""
+    manifest = Path(settings.BASE_DIR).parent / ".release-please-manifest.json"
+    try:
+        return str(json.loads(manifest.read_text(encoding="utf-8"))["."])
+    except (OSError, ValueError, KeyError) as exc:
+        logger.warning("version: cannot read %s: %s", manifest, exc)
+        return "unknown"
+
+
+class VersionView(_ProbeView):
+    """Build identity (``/version``): name, release version, commit and build time."""
+
+    def get(self, request):
+        return Response(
+            {
+                "name": "fredgar-ai",
+                "version": _release_version(),
+                "commit": os.getenv("GIT_SHA", "").strip() or "unknown",
+                "built_at": os.getenv("BUILT_AT", "").strip() or "unknown",
+            },
+            headers=_NO_STORE,
+        )
 
 
 class TaskStatusView(APIView):

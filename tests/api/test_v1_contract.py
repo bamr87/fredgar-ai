@@ -17,7 +17,8 @@ def test_health_ready_database(api_client) -> None:
     assert r.status_code == status.HTTP_200_OK
     body = r.json()
     assert body["status"] == "ok"
-    assert body["checks"]["database"] is True
+    # UPS-BE-11 vocabulary: string checks keyed `db`/`cache`/`broker` (was `database: True`).
+    assert body["checks"]["db"] == "ok"
 
 
 @pytest.mark.django_db
