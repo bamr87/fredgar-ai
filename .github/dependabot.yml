@@ -19,6 +19,12 @@ updates:
     groups:
       npm:
         patterns: ["*"]
+    ignore:
+      # typescript-eslint 8.x declares peer typescript ">=4.8.4 <6.1.0", so a
+      # TypeScript major makes `npm ci` fail with ERESOLVE (PR #137). Drop this
+      # once typescript-eslint's peer range accepts the next major.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions used by CI.
   - package-ecosystem: "github-actions"
