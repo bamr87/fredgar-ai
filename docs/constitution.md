@@ -8,9 +8,13 @@
 
 ## 1. Mission
 
-This PRD describes Fredgar AI (FRED + EDGAR, with AI; repository: fredgar-ai): a web-oriented system to extract, normalize, and explore SEC EDGAR company and filing data alongside FRED macro series, with a path toward AI-assisted interpretation and summaries. The long-term vision includes LLM-driven parsing, narrative insights, and rich visualizations; the current product emphasizes direct SEC APIs, a structured warehouse (companies, filings, XBRL facts, derived metrics), a versioned REST API, and a React UI.
+Fredgar AI makes SEC EDGAR company data and FRED macro series queryable, reproducible and auditable, and layers optional AI on top of those sources rather than in place of them.
 
-_Source: [PRD.md](../PRD.md)._
+It serves analysts, researchers and operators who need to find, sync and join SEC filings, XBRL facts and internal company lists, and developers who integrate through the versioned API. A later hosted tier may also serve retail and prosumer investors. The product extracts and normalizes EDGAR data into a structured warehouse, optionally alongside FRED macro series, and serves it through a REST API, a React UI and a static public mirror. The structured pipeline is the system of record: every figure and enrichment claim keeps a path to its evidence, estimates are never blended with reported facts, and AI-assisted summaries stay grounded in retrieved filing text with citations.
+
+These rules serve the PRD goals: queryable and reproducible EDGAR data, less manual work to match CRM lists to SEC issuers, and AI-assisted explanation that does not sacrifice traceability ([PRD.md](../PRD.md) §2.1). Differentiation is transparent SEC-sourced pipelines, API-first design, CRM-to-CIK workflows, and a planned AI layer on structured facts, not a black-box terminal (PRD §2.3).
+
+_Source: [PRD.md](../PRD.md) §1.1._
 
 ## 2. Invariants (non-negotiable)
 

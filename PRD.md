@@ -6,11 +6,19 @@
 
 ## 1. Document overview
 
-### 1.1 Purpose
+### 1.1 Mission
+
+Fredgar AI makes SEC EDGAR company data and FRED macro series queryable, reproducible and auditable, and layers optional AI on top of those sources rather than in place of them.
+
+It serves analysts, researchers and operators who need to find, sync and join SEC filings, XBRL facts and internal company lists, and developers who integrate through the versioned API. A later hosted tier may also serve retail and prosumer investors. The product extracts and normalizes EDGAR data into a structured warehouse, optionally alongside FRED macro series, and serves it through a REST API, a React UI and a static public mirror. The structured pipeline is the system of record: every figure and enrichment claim keeps a path to its evidence, estimates are never blended with reported facts, and AI-assisted summaries stay grounded in retrieved filing text with citations.
+
+This statement serves the goals in §2.1. It is also [constitution](docs/constitution.md) §1; changing it requires an amendment (constitution §8).
+
+### 1.2 Purpose
 
 This PRD describes **Fredgar AI** (FRED + EDGAR, with AI; repository: **fredgar-ai**): a web-oriented system to extract, normalize, and explore **SEC EDGAR** company and filing data alongside **FRED** macro series, with a path toward **AI-assisted** interpretation and summaries. The long-term vision includes LLM-driven parsing, narrative insights, and rich visualizations; the **current product** emphasizes **direct SEC APIs**, a **structured warehouse** (companies, filings, XBRL facts, derived metrics), a **versioned REST API**, and a **React** UI.
 
-### 1.2 Scope
+### 1.3 Scope
 
 | Area | Status |
 |------|--------|
@@ -18,7 +26,7 @@ This PRD describes **Fredgar AI** (FRED + EDGAR, with AI; repository: **fredgar-
 | **In scope (shipped today)** | Django + DRF backend; `sec_edgar` (SEC client, HTM ingest, submissions/facts sync); `warehouse` models and CRM staging/match flows; `public_data` + FRED; Vite/React frontend; Docker Compose; CI (Ruff, migrations, pytest, frontend build). |
 | **Out of scope (near term)** | Real-time trading, brokerage integration, custom model training, non-SEC primary sources (except optional FRED and future third-party enrichments). |
 
-### 1.3 Version history
+### 1.4 Version history
 
 | Version | Date | Notes |
 |---------|------|--------|
@@ -27,8 +35,9 @@ This PRD describes **Fredgar AI** (FRED + EDGAR, with AI; repository: **fredgar-
 | 2.0 | 2026-03-28 | Aligned with implemented stack; removed duplicate sections; added implementation status and roadmap split. |
 | 2.1 | 2026-09-20 | Distributed extract storage spec (incremental EDGAR/FRED cache, Kaggle + local clean snapshots). |
 | 2.2 | 2026-09-20 | Bonus: Kaggle inbound identify/extract/enrich for companies, industries, markets, economies. |
+| 2.3 | 2026-11-16 | Mission statement added as §1.1 (constitution amendment 0002); later §1 headings renumbered. |
 
-### 1.4 Stakeholders
+### 1.5 Stakeholders
 
 - **Product owner / development**: Core maintainers of this repository.
 - **Engineering**: Backend (Django), frontend (React/TypeScript), data/SEC integration.
