@@ -145,7 +145,7 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
     ports:
-      - "127.0.0.1:${FREDGAR_FRONTEND_PROD_PORT:-8080}:80"
+      - "127.0.0.1:${FREDGAR_FRONTEND_PROD_PORT:-8080}:8080"
     depends_on:
       - web
 
