@@ -9,6 +9,7 @@ with no error raised anywhere.
 These are pure functions over saved HTML — no database, no network.
 """
 
+import logging
 import pathlib
 
 from enrichment.providers.webdiscovery import (
@@ -83,3 +84,84 @@ def test_parked_domain_is_not_a_website():
     )
     assert ok is False
     assert "parked" in why
+
+
+# ------------------------------------------------- malformed input is logged --
+# A page that breaks the parser must still hand back what it could read, and
+# the skip must be visible in the provider's DEBUG log rather than swallowed.
+WEBDISCOVERY_LOG = "enrichment.providers.webdiscovery"
+
+MALFORMED_JSONLD_PAGE = """<html><head><title>Acme Widgets Inc</title>
+<script type="application/ld+json">{"@type": "Organization", "name": </script>
+<script type="application/ld+json">
+{"@context": "https://schema.org", "@type": "Organization", "name": "Acme Widgets Inc"}
+</script>
+</head><body><p>About Acme Widgets Inc</p></body></html>"""
+
+
+def _webdiscovery_debug(caplog) -> list[logging.LogRecord]:
+    return [r for r in caplog.records if r.name == WEBDISCOVERY_LOG and r.levelno == logging.DEBUG]
+
+
+def test_malformed_jsonld_block_is_skipped_and_logged(caplog):
+    """One broken JSON-LD block costs only itself: the title and the valid block survive."""
+    with caplog.at_level(logging.DEBUG, logger=WEBDISCOVERY_LOG):
+        page = parse_page(MALFORMED_JSONLD_PAGE)
+
+    assert page["title"] == "Acme Widgets Inc"
+    assert page["org_name"] == "Acme Widgets Inc"
+    assert page["has_jsonld_org"] is True
+    skips = [r for r in _webdiscovery_debug(caplog) if "JSON-LD" in r.getMessage()]
+    assert len(skips) == 1
+
+
+def test_parser_failure_keeps_partial_extract_and_logs(caplog, monkeypatch):
+    """If the HTML parser raises mid-page, what was read before it is kept and the error logged."""
+
+    def _boom(self, data):
+        raise ValueError("parser failure")
+
+    monkeypatch.setattr("enrichment.providers.webdiscovery._Extract.handle_comment", _boom)
+    html_text = "<html><head><title>Acme Widgets Inc</title></head><!-- x --><body>Late</body>"
+    with caplog.at_level(logging.DEBUG, logger=WEBDISCOVERY_LOG):
+        page = parse_page(html_text)
+
+    assert page["title"] == "Acme Widgets Inc"
+    assert "Late" not in page["text"]
+    failures = [r for r in _webdiscovery_debug(caplog) if r.exc_info]
+    assert len(failures) == 1
+    assert isinstance(failures[0].exc_info[1], ValueError)
+
+
+def test_deeply_nested_jsonld_does_not_stop_the_parse():
+    """json.loads raises RecursionError on very deep nesting (Python 3.12 does at this depth).
+
+    That block alone is skipped; the Organization block after it is still read.
+    """
+    depth = 100_000
+    html_text = (
+        "<title>Acme Widgets Inc</title>"
+        '<script type="application/ld+json">' + "[" * depth + "]" * depth + "</script>"
+        '<script type="application/ld+json">{"@type": "Organization", "name": "Acme Widgets Inc"}'
+        "</script>"
+    )
+    page = parse_page(html_text)
+
+    assert page["title"] == "Acme Widgets Inc"
+    assert page["org_name"] == "Acme Widgets Inc"
+
+
+def test_garbage_input_still_returns_a_page_dict():
+    """Whatever arrives over the wire, the caller gets the same shape back."""
+    for junk in (
+        "",
+        "<<<>>>",
+        "\x00\xff\N{REPLACEMENT CHARACTER}",
+        "<![if !IE]><p>x<![endif]>",
+        '<script type="application/ld+json">{"unterminated": ',
+        '<script type="application/ld+json">' + "[" * 5000 + "</script>",
+    ):
+        page = parse_page(junk)
+        assert isinstance(page, dict), repr(junk)
+        assert page["org_name"] is None
+        assert page["has_jsonld_org"] is False
