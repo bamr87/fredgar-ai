@@ -60,7 +60,7 @@ djangorestframework==3.18.3
     #   drf-spectacular
 drf-spectacular==0.30.0
     # via -r requirements.in
-gunicorn==26.2.0
+gunicorn==27.0.0
     # via -r requirements.in
 idna==3.18
     # via requests
@@ -108,7 +108,7 @@ sqlparse==0.6.0
     # via django
 tenacity==9.2.1
     # via -r requirements.in
-tika==3.3.2
+tika==3.4.0
     # via -r requirements.in
 typing-extensions==4.15.0
     # via
