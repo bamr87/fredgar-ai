@@ -11,7 +11,7 @@
 ## Features
 
 - SEC EDGAR company data through direct SEC APIs (`sec_edgar` app), cached DB-first to respect SEC fair-access limits
-- Optional FRED macro series (`public_data` app, needs `FRED_API_KEY`)
+- Optional FRED macro series (`public_data` app, needs `FRED_API_KEY`), and a company metric charted against a stored FRED series per fiscal period with a correlation summary and CSV export (the company page's Macro tab; [`docs/api-and-cli.md`](docs/api-and-cli.md#company-vs-macro-overlay))
 - Versioned REST API at `/api/v1/` built with Django REST Framework, with an OpenAPI schema and Swagger UI
 - React + TypeScript (Vite) frontend in `frontend/`
 - AI-assisted interpretation and summaries of the data, grounded in SEC filing text

@@ -140,11 +140,20 @@ features:
     provenance: { introduced_in: "PRD.md §4.6 FR-MAC-001", issue: "https://github.com/bamr87/fredgar-ai/issues/112" }
   - id: FREDGAR-013
     title: "Company metric vs macro overlay"
-    description: "Chart a company metric against a FRED series on an aligned time axis with correlation and CSV export."
-    implemented: false
-    status: planned
+    description: "Chart a company metric against a FRED series on an aligned time axis with correlation and CSV export: GET /api/v1/companies/{id}/macro-overlay/ aligns an XBRL concept chain or derived metric with a stored FRED series per fiscal period (avg or eop, partly covered periods dropped) and returns Pearson r; the company page's Macro tab charts both on two axes and exports CSV. Implements proposed PRD requirement FR-ANL-002."
+    implemented: true
+    status: shipped
     prd: ["FR-ANL-002"]
     surface: api
-    docs: "PRD.md"
+    link: "src/warehouse/services/macro_overlay.py"
+    docs: "docs/api-and-cli.md"
+    tags: [macro, fred, charts]
     date: 2026-11-02
     provenance: { introduced_in: "PRD.md §4.6 FR-ANL-002", issue: "https://github.com/bamr87/fredgar-ai/issues/113" }
+    tests:
+      - tests/warehouse/test_macro_overlay.py
+      - tests/api/test_macro_overlay_api.py
+      - frontend/src/lib/overlay.test.ts
+      - frontend/src/pages/company/MacroOverlayTab.test.tsx
+    scenarios: []
+    evidence: []
