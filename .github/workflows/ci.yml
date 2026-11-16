@@ -213,10 +213,25 @@ jobs:
         run: |
           pytest \
             --cov=warehouse --cov=config --cov=sec_edgar --cov=public_data \
-            --cov=api \
+            --cov=api --cov=enrichment \
             --cov-report=term-missing \
             --cov-report=xml \
             --cov-fail-under=50
+      # Put the per-file table on the run's summary page, so a PR shows its
+      # coverage without downloading the coverage-xml artifact. Two decimals,
+      # so the total reads exactly as the --cov-fail-under gate measured it.
+      - name: Coverage summary
+        if: always()
+        run: |
+          if [ -f .coverage ]; then
+            {
+              echo "## Coverage (SQLite)"
+              echo
+              coverage report --format=markdown --precision=2
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No coverage data: pytest did not run." >> "$GITHUB_STEP_SUMMARY"
+          fi
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -259,7 +274,7 @@ jobs:
       - run: |
           pytest -q \
             --cov=warehouse --cov=config --cov=sec_edgar --cov=public_data \
-            --cov=api \
+            --cov=api --cov=enrichment \
             --cov-fail-under=50
 
   # Shared fleet gate (UPS-QA-20), pinned per UPS-WORK-10. It runs beside the
