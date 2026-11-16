@@ -208,6 +208,21 @@ mark { background: color-mix(in srgb, var(--c-warning) 32%, transparent); color:
    ============================================================================ */
 .shell { display: grid; grid-template-columns: var(--sidebar-w) 1fr; min-height: 100vh; }
 
+/* Skip link (UPS-FE-11): the shell's first focusable element. Out of the grid
+   flow and visually hidden until it has focus, then pinned top-left on the
+   fleet skip-link layer (UPS-FE-04 `--fleet-layer-skip-link`, 1100 until the
+   fleet tokens land), above the sidebar, scrim, drawer and toasts. */
+.skip-link {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+.skip-link:focus {
+  position: fixed; top: var(--sp-3); left: var(--sp-3); z-index: var(--fleet-layer-skip-link, 1100);
+  width: auto; height: auto; margin: 0; padding: var(--sp-2) var(--sp-4); overflow: visible; clip-path: none;
+  background: var(--c-surface); color: var(--c-accent-text); font-weight: 600;
+  border: 2px solid var(--c-accent); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg);
+}
+
 .sidebar {
   position: sticky; top: 0; align-self: start; height: 100vh;
   background: var(--c-surface); border-right: 1px solid var(--c-border);
@@ -235,6 +250,11 @@ mark { background: color-mix(in srgb, var(--c-warning) 32%, transparent); color:
 .sidebar-footer { margin-top: auto; padding-top: var(--sp-4); border-top: 1px solid var(--c-border); }
 
 .main { display: flex; flex-direction: column; min-width: 0; }
+/* The skip link's target. It takes focus only programmatically (tabindex=-1) and
+   is not a control, so it draws no ring; the scroll margin keeps the sticky top
+   bar from covering the start of the page when the browser jumps to it. */
+.main-content { scroll-margin-top: var(--topbar-h); }
+.main-content:focus { outline: none; }
 .topbar {
   position: sticky; top: 0; z-index: 20; height: var(--topbar-h);
   background: color-mix(in srgb, var(--c-bg) 82%, transparent);

@@ -1,5 +1,6 @@
-/** Application chrome: sidebar navigation + sticky top bar with global search,
- *  theme toggle, backend-readiness indicator, and admin status. */
+/** Application chrome: skip link, sidebar navigation + sticky top bar with global
+ *  search, theme toggle, backend-readiness indicator, and admin status, around
+ *  the page's one main landmark (`#main-content`), which holds the routed page. */
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useApp } from '../lib/app-context'
@@ -80,6 +81,11 @@ export function AppShell() {
 
   return (
     <div className="shell">
+      {/* First focusable element on every route (UPS-FE-11): keyboard and
+          screen-reader users jump past the sidebar nav and the top bar. */}
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
       <div className={cx('scrim', menuOpen && 'show')} onClick={() => setMenuOpen(false)} />
       <aside className={cx('sidebar', menuOpen && 'open')}>
         <div className="brand">
@@ -130,7 +136,11 @@ export function AppShell() {
             <ThemeToggle />
           </div>
         </header>
-        <Outlet />
+        {/* tabIndex -1: following the skip link focuses the page content
+            without adding the whole area to the Tab order. */}
+        <main id="main-content" className="main-content" tabIndex={-1}>
+          <Outlet />
+        </main>
       </div>
     </div>
   )
