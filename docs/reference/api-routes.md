@@ -48,6 +48,7 @@ Paths are relative to the API host. The canonical base is `/api/v1/`. The root U
 | GET | `/api/v1/companies/{pk}/edgar-sync-status/` | `CompanyViewSet.edgar_sync_status` | `IsAdminOrReadOnly` | — | Last EDGAR sync timestamps for this company, with the latest error snippet. |
 | GET | `/api/v1/companies/{pk}/leadership/` | `CompanyViewSet.leadership` | `IsAdminOrReadOnly` | — | Officers/directors extracted from this company's SEC ownership filings. |
 | GET | `/api/v1/companies/{pk}/leadership-analysis/` | `CompanyViewSet.leadership_analysis` | `IsAdminOrReadOnly` | — | Most recent stored LLM leadership analysis for this company (if any). |
+| GET | `/api/v1/companies/{pk}/macro-overlay/` | `CompanyViewSet.macro_overlay` | `IsAdminOrReadOnly` | query `metric`, `concept`, `series`, `agg`, `taxonomy`, `annual`, `limit` | A company metric or XBRL fact aligned with a stored FRED series per fiscal period, with Pearson r. |
 | GET | `/api/v1/companies/{pk}/profile/` | `CompanyViewSet.profile` | `IsAdminOrReadOnly` | — | Consolidated Company-360 view: identity, financials, filings, documents, CRM. |
 | GET | `/api/v1/companies/{pk}/stakeholder-assessment/` | `CompanyViewSet.stakeholder_assessment` | `IsAdminOrReadOnly` | — | Transparent people-vs-profits orientation index (heuristic; see caveats). |
 | GET | `/api/v1/companies/{pk}/statements/` | `CompanyViewSet.statements` | `IsAdminOrReadOnly` | query `statement_type`, `taxonomy` | Curated financial-statement view (balance/income/cash-flow) from Facts. |

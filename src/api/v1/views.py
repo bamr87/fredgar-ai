@@ -400,6 +400,74 @@ class CompanyViewSet(viewsets.ModelViewSet):
             {"company": company.id, "concept": concepts[0], "concepts": concepts, "taxonomy": taxonomy, "series": series}
         )
 
+    @action(detail=True, methods=["get"], url_path="macro-overlay")
+    def macro_overlay(self, request, pk=None):
+        """A company metric or XBRL fact aligned with a stored FRED series per fiscal period, with Pearson r."""
+        from warehouse.services.macro_overlay import (
+            AGGREGATIONS,
+            build_macro_overlay,
+            find_stored_series,
+            known_metric_keys,
+        )
+
+        company = self.get_object()
+        qp = request.query_params
+        metric = (qp.get("metric") or "").strip()
+        concepts = [c.strip() for c in (qp.get("concept") or "").split(",") if c.strip()]
+        series_id = (qp.get("series") or "").strip()
+        agg = (qp.get("agg") or "avg").strip().lower()
+        if bool(metric) == bool(concepts):
+            return Response(
+                {
+                    "detail": "Give exactly one of metric (a derived-metric key) or concept "
+                    "(an XBRL tag, or a comma-separated priority chain).",
+                    "metrics": known_metric_keys(),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if metric and metric not in known_metric_keys():
+            return Response(
+                {"detail": f"Unknown metric '{metric}'.", "metrics": known_metric_keys()},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not series_id:
+            return Response(
+                {"detail": "series query parameter (a FRED series id) is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if agg not in AGGREGATIONS:
+            return Response(
+                {"detail": f"Unknown agg '{agg}'.", "allowed_agg": list(AGGREGATIONS)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        series = find_stored_series(series_id)
+        if series is None:
+            return Response(
+                {
+                    "detail": f"Series '{series_id}' has no stored observations. "
+                    "Sync it first (refresh_series_bundles); this endpoint never calls FRED."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        taxonomy = (qp.get("taxonomy") or "us-gaap").strip() or "us-gaap"
+        annual = (qp.get("annual") or "").strip().lower() in ("1", "true", "yes", "on")
+        try:
+            lim = int(qp.get("limit", 80))
+        except ValueError:
+            lim = 80
+        lim = max(1, min(lim, 500))
+        data = build_macro_overlay(
+            company,
+            series,
+            metric=metric or None,
+            concepts=concepts or None,
+            agg=agg,
+            annual_only=annual,
+            taxonomy=taxonomy,
+            limit=lim,
+        )
+        return Response(data)
+
     @action(detail=True, methods=["get"], url_path="statements")
     def statements(self, request, pk=None):
         """Curated financial-statement view (balance/income/cash-flow) from Facts."""
