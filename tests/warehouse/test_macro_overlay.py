@@ -17,6 +17,7 @@ from warehouse.services.macro_overlay import (
     fiscal_windows,
     pearson,
     series_step_days,
+    window_observations,
 )
 
 
@@ -144,6 +145,84 @@ def test_window_before_the_series_starts_is_dropped(june_fy):
         "reason": "series_starts_late",
     }
     assert len(out["rows"]) == 3
+
+
+def _dropped(out) -> dict[str, str]:
+    return {d["period_end"]: d["reason"] for d in out["alignment"]["dropped"]}
+
+
+def test_missing_first_month_of_a_fiscal_year_is_a_gap(june_fy):
+    # July 2021 (index 18), the first month of FY2022, is missing. FY2021 ends
+    # with June 2021 and keeps all twelve months.
+    series = _monthly("UNRATE", 60, skip={18})
+    out = build_macro_overlay(june_fy, series, concepts=["Revenues"])
+
+    assert _dropped(out) == {"2022-06-30": "gap"}
+    assert [r["period_end"] for r in out["rows"]] == ["2021-06-30", "2023-06-30", "2024-06-30"]
+    assert all(r["series_observations"] == 12 for r in out["rows"])
+    assert out["correlation"]["n"] == 3
+
+
+def test_missing_last_month_of_a_fiscal_year_is_a_gap_not_the_next_years(june_fy):
+    # June 2021 (index 17), the last month of FY2021, is missing. The hole ends
+    # before FY2022 starts, so FY2022 keeps all twelve months.
+    series = _monthly("UNRATE", 60, skip={17})
+    out = build_macro_overlay(june_fy, series, concepts=["Revenues"])
+
+    assert _dropped(out) == {"2021-06-30": "gap"}
+    assert [r["period_end"] for r in out["rows"]] == ["2022-06-30", "2023-06-30", "2024-06-30"]
+    assert all(r["series_observations"] == 12 for r in out["rows"])
+
+
+def test_missing_first_quarter_of_a_fiscal_year_is_a_gap(june_fy):
+    quarters = [dt.date(2020 + q // 4, (q % 4) * 3 + 1, 1) for q in range(20)]  # 2020Q1 .. 2024Q4
+    quarters.remove(dt.date(2021, 7, 1))  # FY2022's first quarter
+    gdp = _series("GDP", [(d, 1000.0) for d in quarters], frequency="Quarterly")
+    out = build_macro_overlay(june_fy, gdp, concepts=["Revenues"])
+
+    assert _dropped(out) == {"2022-06-30": "gap"}
+    assert [r["series_observations"] for r in out["rows"]] == [4, 4, 4]
+
+
+def test_series_starting_one_month_into_the_first_window_starts_late(june_fy):
+    # The series starts in August 2020 (index 7), one month into FY2021.
+    series = _series("LATE", [(_month(i), float(i)) for i in range(7, 60)])
+    out = build_macro_overlay(june_fy, series, concepts=["Revenues"])
+
+    assert _dropped(out) == {"2021-06-30": "series_starts_late"}
+    assert [r["period_end"] for r in out["rows"]] == ["2022-06-30", "2023-06-30", "2024-06-30"]
+
+
+def test_window_starting_between_two_observations_is_covered():
+    # A monthly series dated on the 1st; the window rule assigns observations by date.
+    dates = [_month(i) for i in range(24)]
+    values = [float(i) for i in range(24)]
+    step = series_step_days(dates)
+    assert step == 31.0
+
+    # Starts on 2 July: the first observation inside is 1 August, 30 days in, and
+    # the one before it (1 July) is a normal step earlier, so nothing is missing.
+    window, reason = window_observations(
+        dates, values, dt.date(2020, 7, 2), dt.date(2021, 7, 1), step
+    )
+    assert reason is None
+    assert window == [float(i) for i in range(7, 19)]
+
+    # Starts on 15 July with July missing: 1 July is not dated inside the window,
+    # so the window still has every observation it should.
+    holed = [d for d in dates if d != dt.date(2020, 7, 1)]
+    held = [float(d.month - 1 + 12 * (d.year - 2020)) for d in holed]
+    window, reason = window_observations(
+        holed, held, dt.date(2020, 7, 15), dt.date(2021, 6, 30), step
+    )
+    assert reason is None
+    assert len(window) == 11  # 1 August 2020 .. 1 June 2021
+
+    # Starts on 1 July with July missing: that observation is dated inside it.
+    window, reason = window_observations(
+        holed, held, dt.date(2020, 7, 1), dt.date(2021, 6, 30), step
+    )
+    assert (window, reason) == ([], "gap")
 
 
 def test_known_pearson_r(company):

@@ -25,12 +25,18 @@ Alignment, as documented in ``docs/api-and-cli.md``:
   July 1 through June 1, or the four quarterly ones dated July 1 through April 1.
 * **Aggregation.** ``avg`` (default) is the mean of those observations; ``eop``
   is the last one.
-* **Partly covered windows are dropped,** never padded or interpolated: the
-  first observation must fall within one series step of the window start, the
-  last within one step of its end, and no two consecutive observations may be
-  more than 1.5 steps apart. The step is the median spacing of the series'
-  stored observations, and every bound has three days of slack for weekends and
-  holidays. Dropped windows are listed with the reason.
+* **Partly covered windows are dropped,** never padded or interpolated. A
+  window is dropped when an observation dated inside it is missing: a whole
+  series step lies between the window start and its first observation (unless
+  the observation stored before the window is a normal step away, so the window
+  just starts between two observations), more than a step lies between its last
+  observation and the window end (unless the one stored after the window is a
+  normal step away), or two consecutive observations are more than 1.5 steps
+  apart. A hole with stored observations on both sides is a ``gap``; a window
+  the stored series does not reach is ``series_starts_late`` or
+  ``series_ends_early``. The step is the median spacing of the series' stored
+  observations, and every bound has three days of slack for weekends, holidays
+  and month lengths. Dropped windows are listed with the reason.
 * **Correlation.** Pearson r over the aligned pairs, ``null`` when fewer than
   three pairs align or either side is constant.
 """
@@ -66,9 +72,10 @@ ALIGNMENT_DESCRIPTION = (
     "Each company value covers its fiscal window [period_start, period_end]: a durational "
     "fact's own period; a derived metric's longest durational input fact for that period end; "
     "a point-in-time value the span since the previous period end. The series observations "
-    "dated inside the window are aggregated (avg = mean, eop = last). A window the series does "
-    "not fully cover is dropped: the first observation must fall within one series step of the "
-    "start, the last within one step of the end, and no gap may exceed 1.5 steps (3 days slack "
+    "dated inside the window are aggregated (avg = mean, eop = last). A window missing any "
+    "observation dated inside it is dropped: a whole series step before its first observation "
+    "or more than one after its last (unless the stored observation beyond that edge is a "
+    "normal step away), or two consecutive observations more than 1.5 steps apart (3 days slack "
     "on each bound). Pearson r is computed over the aligned pairs and is null when n < 3."
 )
 
@@ -217,16 +224,45 @@ def series_step_days(dates: list[date]) -> float | None:
 def window_observations(
     dates: list[date], values: list[float], start: date, end: date, step: float
 ) -> tuple[list[float], str | None]:
-    """The series values dated inside ``[start, end]``, or a reason the window is not covered."""
+    """The series values dated inside ``[start, end]``, or a reason the window is not covered.
+
+    A window is not covered when an observation dated inside it is missing:
+
+    * **At the start:** a whole step, less the slack, lies between the window
+      start and its first observation. That is ``gap`` when the observation
+      stored before the window is more than ``GAP_STEPS`` steps before it, and
+      ``series_starts_late`` when nothing is stored before the window. When the
+      one before is a normal step away, nothing is missing: the window starts
+      between two observations.
+    * **At the end:** more than a step, plus the slack, lies between its last
+      observation and the window end. That is ``gap`` when the observation stored
+      after the window is more than ``GAP_STEPS`` steps after it, and
+      ``series_ends_early`` when nothing is stored after the window.
+    * **Inside:** two consecutive observations more than ``GAP_STEPS`` steps
+      apart (``gap``).
+
+    The start bound is a step tighter than the end bound because an observation
+    is dated by the first day of its period: a complete series has an observation
+    on the first day of a window that starts on a period boundary, and its last
+    one a period before the end of a window that ends on one.
+    """
     lo = bisect.bisect_left(dates, start)
     hi = bisect.bisect_right(dates, end)
     if lo == hi:
         return [], "no_observations"
-    if (dates[lo] - start).days > step + SLACK_DAYS:
-        return [], "series_starts_late"
-    if (end - dates[hi - 1]).days > step + SLACK_DAYS:
-        return [], "series_ends_early"
     max_gap = step * GAP_STEPS + SLACK_DAYS
+    lead = (dates[lo] - start).days
+    if lead > SLACK_DAYS and lead + SLACK_DAYS >= step:
+        if lo == 0:
+            return [], "series_starts_late"
+        if (dates[lo] - dates[lo - 1]).days > max_gap:
+            return [], "gap"
+    tail = (end - dates[hi - 1]).days
+    if tail > step + SLACK_DAYS:
+        if hi == len(dates):
+            return [], "series_ends_early"
+        if (dates[hi] - dates[hi - 1]).days > max_gap:
+            return [], "gap"
     if any((b - a).days > max_gap for a, b in itertools.pairwise(dates[lo:hi])):
         return [], "gap"
     return values[lo:hi], None
