@@ -92,9 +92,9 @@ Every route and command is listed in the generated [`docs/reference/`](docs/refe
 
 ### Apps (under `src/`)
 
-- **`warehouse`** — every persisted model ([`models.py`](src/warehouse/models.py)): `Company`, `ListedIssuer`, `Filing`, `Section`, `Table`, `FilingDocument`, `Fact`, `DerivedMetric`, `PeerGroup`, CRM staging (`CrmCompanyRecord`), the SEC JSON cache (`EdgarSecPayload`, `EdgarEntitySyncState`), the Company-360 layer (`DataSource`, `ExternalIdentifier`, `ContentChunk`) and the `Enrichment*` models. Also the Celery tasks ([`tasks.py`](src/warehouse/tasks.py)).
+- **`warehouse`** — every persisted model ([`models.py`](src/warehouse/models.py)): `Company`, `ListedIssuer`, `Filing`, `Section`, `Table`, `FilingDocument`, `Fact`, `DerivedMetric`, `PeerGroup`, CRM staging (`CrmCompanyRecord`), the SEC JSON cache (`EdgarSecPayload`, `EdgarEntitySyncState`), the Company-360 layer (`DataSource`, `ExternalIdentifier`, `ContentChunk`), the `Enrichment*` models and `SeriesVintageObservation` (stored FRED vintages). Also the Celery tasks ([`tasks.py`](src/warehouse/tasks.py)).
 - **`sec_edgar`** — SEC HTTP client, HTM/SGML parsing, ingest and sync services. No models.
-- **`public_data`** — external time-series registry (`ExternalSeries`, `SeriesBundle`, `SeriesObservation`) and FRED sync; bundles are JSON under `src/public_data/bundles/`.
+- **`public_data`** — external time-series registry (`ExternalSeries`, `SeriesBundle`, `SeriesObservation`) and FRED sync; bundles are JSON under `src/public_data/bundles/`. FRED unit transforms and frequency aggregation are pure functions in `services/transforms.py`; ALFRED vintages (`services/vintages.py`) are off unless `ENABLE_FRED_VINTAGES` is set.
 - **`enrichment`** — the claim-based enrichment framework. No models of its own.
 - **`api`** — DRF views only; routes in [`api/v1/urls.py`](src/api/v1/urls.py).
 - **`config`** — settings, URLs, Celery, WSGI/ASGI. Settings fail fast on insecure production config.

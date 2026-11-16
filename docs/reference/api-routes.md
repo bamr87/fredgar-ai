@@ -87,4 +87,4 @@ Paths are relative to the API host. The canonical base is `/api/v1/`. The root U
 | GET | `/api/v1/public-observations/{pk}/` | `SeriesObservationViewSet.retrieve` | `IsAdminOrReadOnly` | — | — |
 | GET | `/api/v1/series-bundles/` | `SeriesBundleViewSet.list` | `IsAdminOrReadOnly` | — | — |
 | GET | `/api/v1/series-bundles/{slug}/` | `SeriesBundleViewSet.retrieve` | `IsAdminOrReadOnly` | — | — |
-| GET | `/api/v1/series-bundles/{slug}/observations/` | `SeriesBundleViewSet.observations` | `IsAdminOrReadOnly` | query `per_series`, `limit` | Recent observations + series metadata for every series in this bundle. |
+| GET | `/api/v1/series-bundles/{slug}/observations/` | `SeriesBundleViewSet.observations` | `IsAdminOrReadOnly` | query `units`, `frequency`, `aggregation`, `vintage_date`, `per_series`, `limit` | Recent observations + series metadata for every series in this bundle. |

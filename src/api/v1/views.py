@@ -13,6 +13,14 @@ from rest_framework.views import APIView
 
 from enrichment.services import dataset_report
 from public_data.models import ExternalSeries, SeriesBundle, SeriesObservation
+from public_data.services.observations import (
+    SeriesTransform,
+    newest_first,
+    parse_series_transform,
+    transformed_observations,
+)
+from public_data.services.transforms import TransformError
+from public_data.services.vintages import VintageNotStored, VintageUnavailable
 from sec_edgar.exceptions import EdgarRateLimitError, EdgarResolutionError
 from sec_edgar.services.sic_reference import (
     search_sic_codes,  # reference-data tier (not EDGAR sync)
@@ -1009,6 +1017,26 @@ class PeerGroupViewSet(viewsets.ModelViewSet):
         )
 
 
+def _series_transform(request) -> SeriesTransform | None:
+    """The FRED transform a series request asks for (``units``, ``frequency``, ``aggregation``, ``vintage_date``).
+
+    None when it names none of them, so the endpoint answers exactly as before. Raises
+    ``TransformError`` (a 400) on an unknown value or a refused ``vintage_date``.
+    """
+    qp = request.query_params
+    return parse_series_transform(
+        units=qp.get("units"),
+        frequency=qp.get("frequency"),
+        aggregation=qp.get("aggregation"),
+        vintage_date=qp.get("vintage_date"),
+    )
+
+
+def _may_fetch_vintages(request) -> bool:
+    """Fetching a missing vintage calls FRED and writes rows, a sync action: staff only."""
+    return bool(request.user and request.user.is_staff)
+
+
 class ExternalSeriesViewSet(viewsets.ReadOnlyModelViewSet):
     """The external time-series catalog (FRED and other providers)."""
 
@@ -1018,11 +1046,56 @@ class ExternalSeriesViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class SeriesObservationViewSet(viewsets.ReadOnlyModelViewSet):
-    """Observations of the external time series."""
+    """Observations of the external time series.
+
+    With ``units``, ``frequency`` (and ``aggregation``) or ``vintage_date``, the list is
+    one ``series`` transformed the FRED way, newest first, each row holding ``series``,
+    ``observation_date`` and ``value``, with the applied ``transform`` and the
+    ``output_frequency`` echoed beside the page. Only staff can make a request fetch a
+    vintage that is not stored yet. See docs/api-and-cli.md.
+    """
 
     queryset = SeriesObservation.objects.all().order_by("-observation_date")
     serializer_class = SeriesObservationSerializer
     filterset_fields = ["series"]
+
+    def list(self, request, *args, **kwargs):
+        try:
+            transform = _series_transform(request)
+        except TransformError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        if transform is None:
+            return super().list(request, *args, **kwargs)
+        try:
+            series_id = int(request.query_params.get("series") or "")
+        except ValueError:
+            detail = "series (an id from /public-series/) is required to transform observations"
+            return Response({"detail": detail}, status=status.HTTP_400_BAD_REQUEST)
+        series = ExternalSeries.objects.filter(pk=series_id).first()
+        if series is None:
+            return Response({"detail": "Series not found."}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            result = transformed_observations(
+                series, transform, strict=True, fetch_missing=_may_fetch_vintages(request)
+            )
+        except TransformError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        except VintageNotStored as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_403_FORBIDDEN)
+        except VintageUnavailable as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+        rows = [
+            {"series": series.pk, "observation_date": day.isoformat(), "value": value}
+            for day, value in newest_first(result)
+        ]
+        page = self.paginate_queryset(rows)
+        if page is None:
+            response = Response({"results": rows})
+        else:
+            response = self.get_paginated_response(page)
+        response.data["transform"] = transform.echo()
+        response.data["output_frequency"] = result.frequency
+        return response
 
 
 class SeriesBundleViewSet(viewsets.ReadOnlyModelViewSet):
@@ -1038,8 +1111,15 @@ class SeriesBundleViewSet(viewsets.ReadOnlyModelViewSet):
 
         Limit is applied *per series* (``per_series``) so high-frequency (daily)
         series aren't truncated by lower-frequency ones sharing the bundle.
+        ``units``, ``frequency`` (and ``aggregation``) and ``vintage_date`` return the
+        FRED-transformed values instead, with the applied ``transform`` echoed and each
+        series' ``output_frequency``; see docs/api-and-cli.md.
         """
         bundle = self.get_object()
+        try:
+            transform = _series_transform(request)
+        except TransformError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         try:
             per = int(request.query_params.get("per_series") or request.query_params.get("limit") or 1500)
         except ValueError:
@@ -1047,42 +1127,58 @@ class SeriesBundleViewSet(viewsets.ReadOnlyModelViewSet):
         per = max(1, min(per, 8000))
 
         items = list(bundle.items.select_related("series").order_by("sort_order"))
+        fetch_missing = _may_fetch_vintages(request)
         series_meta: list[dict] = []
         data: list[dict] = []
         for item in items:
             s = item.series
             meta = s.metadata or {}
-            series_meta.append(
-                {
-                    "external_id": s.external_id,
-                    "title": s.title,
-                    "units": s.units,
-                    "frequency": s.frequency,
-                    "note": meta.get("note", ""),
-                    "industries": meta.get("industries", []),
-                }
-            )
-            for o in (
-                SeriesObservation.objects.filter(series=s).order_by("-observation_date")[:per]
-            ):
+            entry = {
+                "external_id": s.external_id,
+                "title": s.title,
+                "units": s.units,
+                "frequency": s.frequency,
+                "note": meta.get("note", ""),
+                "industries": meta.get("industries", []),
+            }
+            series_meta.append(entry)
+            if transform is None:
+                values = [
+                    (o.observation_date, str(o.value))
+                    for o in SeriesObservation.objects.filter(series=s).order_by("-observation_date")[:per]
+                ]
+            else:
+                # A series whose own frequency is lower than the one asked for keeps its own.
+                try:
+                    result = transformed_observations(
+                        s, transform, strict=False, fetch_missing=fetch_missing
+                    )
+                except VintageUnavailable as exc:
+                    entry["output_frequency"] = None
+                    entry["error"] = str(exc)
+                    continue
+                entry["output_frequency"] = result.frequency
+                values = newest_first(result)[:per]
+            for day, value in values:
                 data.append(
                     {
                         "series": s.external_id,
                         "provider": s.provider,
-                        "date": o.observation_date.isoformat(),
-                        "value": str(o.value),
+                        "date": day.isoformat(),
+                        "value": value,
                     }
                 )
-        return Response(
-            {
-                "bundle": bundle.slug,
-                "name": bundle.name,
-                "description": bundle.description,
-                "count": len(data),
-                "series": series_meta,
-                "observations": data,
-            }
-        )
+        payload = {
+            "bundle": bundle.slug,
+            "name": bundle.name,
+            "description": bundle.description,
+            "count": len(data),
+            "series": series_meta,
+            "observations": data,
+        }
+        if transform is not None:
+            payload["transform"] = transform.echo()
+        return Response(payload)
 
 
 class EnrichmentDatasetViewSet(viewsets.ReadOnlyModelViewSet):

@@ -31,7 +31,7 @@ Copy [`frontend/.env.example`](.env.example) if you need a template.
 | `/search` | Full-text filing search (`FilingSearch`) |
 | `/compare` | Cohort comparison (`Compare`) |
 | `/peers` | Peer groups (`PeerGroups`) |
-| `/macro` | Macro time series (`Macro`) |
+| `/macro` | Macro time series (`Macro`): FRED units, frequency aggregation and Index (=100) |
 | `/settings` | Settings (`Settings`) — auth token, SEC contact email, theme |
 | `/explore`, `/metadata` | Redirect to `/companies` |
 

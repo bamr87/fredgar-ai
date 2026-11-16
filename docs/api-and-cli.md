@@ -34,3 +34,22 @@ python manage.py help <command>      # full argument help, with defaults
 The enrichment pipeline (`enrich_*`) is CLI-only by design: running providers spends SEC and search budget and takes minutes, so it does not belong in a request a browser can retry. The HTTP side only reads its results. See [enrichment.md](enrichment.md).
 
 `publish_static_site` is the GitHub Pages build (sync a curated cohort from SEC, then render); see [static-site.md](static-site.md). The leadership commands and their caveats are in [leadership-methodology.md](leadership-methodology.md).
+
+## Macro series: FRED transforms and vintages
+
+`GET /api/v1/series-bundles/{slug}/observations/` and `GET /api/v1/public-observations/?series={id}` return the stored FRED observations. Four optional query parameters return them transformed the way the FRED API would (FR-MAC-001, [`transforms.py`](../src/public_data/services/transforms.py)). Without them, both endpoints answer exactly as before.
+
+| Parameter | Values | Default |
+| --- | --- | --- |
+| `units` | `lin` levels, `chg` change, `ch1` change from a year ago, `pch` percent change, `pc1` percent change from a year ago, `pca` compounded annual rate of change, `cch` continuously compounded rate of change, `cca` continuously compounded annual rate of change, `log` natural log | `lin` |
+| `frequency` | `d`, `w` (weekly, ending Friday), `m`, `q`, `sa`, `a` | the series' own |
+| `aggregation` | `avg`, `sum`, `eop` (end of period); read only with `frequency` | `avg` |
+| `vintage_date` | `YYYY-MM-DD`: the series as FRED published it on that day (ALFRED); needs `ENABLE_FRED_VINTAGES=true` | none: the stored observations |
+
+- **Formulas.** The units follow [FRED's formulas](https://alfred.stlouisfed.org/help#growth_formulas), where `n` is the number of observations per year at the output frequency: daily 260, weekly 52, biweekly 26, monthly 12, quarterly 4, semiannual 2, annual 1. Aggregation runs first, then the units transform.
+- **Lags are by period.** x(t-1) is the observation one period earlier at the output frequency: the previous weekday for daily data, or the previous calendar day for a series with weekend observations. When that period is missing, the value is undefined, as FRED's `.` is. Undefined values are left out of the response: the first period of a change, a percentage over zero, and the log of a value that is not positive.
+- **Frequency.** Aggregation labels each period as FRED does: the first day of the month, quarter, half-year or year, and the Friday that ends the week. A period still in progress aggregates the observations it has so far. FRED's biweekly target (`bw`) is not offered, because FRED does not document which Wednesdays anchor its two-week periods. Asking one series for a frequency higher than its own is a `400`, as in FRED. A bundle mixes frequencies, so there a series of a lower frequency keeps its own, and each entry in `series` reports its `output_frequency`.
+- **Echo.** A transformed response adds `transform`, holding the applied `units`, `frequency`, `aggregation` and `vintage_date`. On `public-observations`, `series` is then required, the rows become `{series, observation_date, value}` newest first (still paginated), and `output_frequency` sits beside the page. An unknown value is a `400` with a `detail`.
+- **Vintages.** Off by default. With `ENABLE_FRED_VINTAGES=true`, a `vintage_date` is read from `warehouse.SeriesVintageObservation`, and anyone can read what is stored. When that series and date are not stored yet, a staff user's request fetches them once from FRED, with `realtime_start` and `realtime_end` set to the vintage date, and stores them: like the SEC sync actions, a FRED call that writes rows needs `is_staff`. Anyone else gets a `403` on `public-observations`, and in a bundle that series carries an `error` and no values. `python manage.py sync_series_vintage --series GDPC1 --as-of 2020-01-01` fetches one ahead of time, which a large bundle wants: the first request for a new date makes one FRED call per series. A series FRED cannot supply is a `502` on `public-observations`, and an `error` in a bundle. While the flag is off, `vintage_date` is a `400`.
+
+The Macro page offers the same units, frequency and aggregation. Its Index (=100) option rebases the levels in the browser, since the FRED API has no such unit.

@@ -91,8 +91,14 @@ export const usePeerFactCompare = (id: number | null, concept: string) =>
 
 // ---- Macro ----
 export const useSeriesBundles = () => useQuery({ queryKey: ['series-bundles'], queryFn: () => api.listSeriesBundles(), staleTime: FIVE_MIN })
-export const useBundleObservations = (slug: string | null) =>
-  useQuery({ queryKey: ['bundle-obs', slug], queryFn: () => api.getBundleObservations(slug as string), enabled: !!slug, staleTime: FIVE_MIN })
+/** A bundle's observations, transformed server-side the FRED way when `t` asks for it. */
+export const useBundleObservations = (slug: string | null, t: api.SeriesTransformParams = {}) =>
+  useQuery({
+    queryKey: ['bundle-obs', slug, api.seriesTransformQuery(t)],
+    queryFn: () => api.getBundleObservations(slug as string, 2000, t),
+    enabled: !!slug,
+    staleTime: FIVE_MIN,
+  })
 
 // ---- Mutations (admin) ----
 export function useSyncSubmissions(id: number) {
