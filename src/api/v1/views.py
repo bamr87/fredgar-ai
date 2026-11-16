@@ -836,10 +836,13 @@ class FilingViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="search")
     def search_documents(self, request):
-        """Full-text search across ingested FilingDocument text.
+        """Full-text search across ingested FilingDocument text, optionally narrowed by
+        ``form_type`` and ``cik``; 400 when ``q`` is shorter than 2 characters or ``cik``
+        is not a valid SEC CIK.
 
-        Postgres uses ``SearchVector``/``SearchRank``; other backends fall back to
-        a case-insensitive substring match.
+        A missing or empty ``cik`` searches every company. Postgres uses
+        ``SearchVector``/``SearchRank``; other backends fall back to a
+        case-insensitive substring match.
         """
         from django.db import connection
 
@@ -860,7 +863,10 @@ class FilingViewSet(viewsets.ReadOnlyModelViewSet):
             try:
                 qs = qs.filter(filing__company__cik=normalize_cik(cik))
             except ValueError:
-                pass
+                return Response(
+                    {"detail": "cik must be a valid SEC CIK (digits, up to 10)."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         if connection.vendor == "postgresql":
             from django.contrib.postgres.search import (

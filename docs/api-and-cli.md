@@ -18,6 +18,7 @@ Regenerate both with `python3 tools/gen_reference.py --write` after changing a r
 - **Async jobs:** the sync actions accept `?async=true` and answer `202` with a `task_id`; poll `GET /api/v1/tasks/{task_id}/` for the Celery result (staff only, the same users who can dispatch the job).
 - **SEC caching:** reads go DB first and only call SEC when nothing is cached; `?force_refresh=true` refetches on the endpoints whose **Params** column lists it. See [architecture.md](architecture.md).
 - **SEC User-Agent:** SEC requires a contact email. The server uses `USER_AGENT_EMAIL`; a request may override it with the `X-Sec-User-Agent-Email` header.
+- **Filing text search:** `GET /api/v1/filings/search/?q=…` searches the text of ingested filing documents (ranked full-text search on Postgres, a case-insensitive substring match elsewhere) and returns at most 50 hits. `q` must be at least 2 characters; `form_type` (for example `10-K`) and `cik` narrow the search. `cik` takes a bare, zero-padded or `CIK`-prefixed value (`320193`, `0000320193`, `CIK0000320193`); a value with no digits, or with more than 10 significant digits, is a `400` with a `detail` message rather than a filter that is quietly dropped. Leave `cik` out, or empty, to search every company.
 
 The same service functions back the API and the CLI: `POST /api/v1/companies/{id}/sync-submissions/` and `manage.py sync_submissions` both call `sync_submissions_for_company`.
 
