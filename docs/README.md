@@ -13,7 +13,7 @@ Start with the [root README](../README.md) for setup, Docker and tests, and [AGE
 
 | Document | What it covers |
 | --- | --- |
-| [`AGENTS.md`](../AGENTS.md) | Django + DRF backend and Vite/React UI for SEC EDGAR company data and FRED macro series, with AI-assisted analysis layered on top. |
+| [`AGENTS.md`](../AGENTS.md) | Fredgar AI's direction is to become the ultimate open home for all things financial: data, tools, resources and transparency, with queryable and auditable SEC EDGAR and FRED data, cited AI, and API-first access for everyone… |
 | [`CONTRIBUTING.md`](../CONTRIBUTING.md) | How to set up a local environment, run the same lint, test and migration checks as CI, and land a change in fredgar-ai. |
 | [`CHANGELOG.md`](../CHANGELOG.md) | Release history: the notable changes in each version, newest first. |
 | [`PRD.md`](../PRD.md) | Product vision, scope and roadmap for Fredgar AI, with what is implemented today marked apart from what is planned. |
