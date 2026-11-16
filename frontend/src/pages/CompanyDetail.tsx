@@ -1,5 +1,5 @@
 /** Company-360 detail: identity header + tabbed views (Overview, Financials,
- *  Filings & Documents, Leadership, Facts). */
+ *  Macro overlay, Filings & Documents, Leadership, Facts). */
 import { useEffect } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useApp } from '../lib/app-context'
@@ -15,6 +15,7 @@ import {
   IconChart,
   IconExternal,
   IconFile,
+  IconGlobe,
   IconLayers,
   IconRefresh,
   IconUsers,
@@ -23,11 +24,12 @@ import {
 } from '../components/ui'
 import { OverviewTab } from './company/OverviewTab'
 import { FinancialsTab } from './company/FinancialsTab'
+import { MacroOverlayTab } from './company/MacroOverlayTab'
 import { FilingsTab } from './company/FilingsTab'
 import { LeadershipTab } from './company/LeadershipTab'
 import { FactsTab } from './company/FactsTab'
 
-const TAB_KEYS = ['overview', 'financials', 'filings', 'leadership', 'facts']
+const TAB_KEYS = ['overview', 'financials', 'macro', 'filings', 'leadership', 'facts']
 
 export function CompanyDetail() {
   const { id } = useParams()
@@ -52,6 +54,7 @@ export function CompanyDetail() {
   const tabs = [
     { key: 'overview', label: 'Overview', icon: <IconLayers width={16} height={16} /> },
     { key: 'financials', label: 'Financials', icon: <IconChart width={16} height={16} /> },
+    { key: 'macro', label: 'Macro', icon: <IconGlobe width={16} height={16} /> },
     { key: 'filings', label: 'Filings & Docs', icon: <IconFile width={16} height={16} /> },
     { key: 'leadership', label: 'Leadership', icon: <IconUsers width={16} height={16} /> },
     { key: 'facts', label: 'XBRL Facts', icon: <IconLayers width={16} height={16} /> },
@@ -101,6 +104,7 @@ export function CompanyDetail() {
       <div className="mt-4">
         {tab === 'overview' && <OverviewTab id={companyId} />}
         {tab === 'financials' && <FinancialsTab id={companyId} />}
+        {tab === 'macro' && <MacroOverlayTab id={companyId} />}
         {tab === 'filings' && <FilingsTab id={companyId} cik={c.cik} />}
         {tab === 'leadership' && <LeadershipTab id={companyId} />}
         {tab === 'facts' && <FactsTab id={companyId} />}

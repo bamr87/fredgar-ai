@@ -155,6 +155,56 @@ export function MultiLineChart({
   )
 }
 
+export type AxisSeries = { name: string; color: string; fmt?: (v: number) => string }
+export type DualAxisRow = { x: string; left: number | null; right: number | null }
+
+/** Two series on one time axis, each on its own y-axis (left and right), for series
+ *  whose units differ (e.g. company revenue in USD vs a macro rate in percent). */
+export function DualAxisChart({
+  data,
+  left,
+  right,
+  height = 320,
+}: {
+  data: DualAxisRow[]
+  left: AxisSeries
+  right: AxisSeries
+  height?: number
+}) {
+  const fmtLeft = left.fmt ?? compact
+  const fmtRight = right.fmt ?? compact
+  const tooltipFmt = (name: string | undefined, v: number) => (name === right.name ? fmtRight(v) : fmtLeft(v))
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <LineChart data={data} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
+        <XAxis dataKey="x" tick={axisTick} tickLine={false} axisLine={{ stroke: gridStroke }} minTickGap={24} />
+        <YAxis yAxisId="left" tick={{ ...axisTick, fill: left.color }} tickLine={false} axisLine={false} tickFormatter={(v) => fmtLeft(v)} width={60} />
+        <YAxis yAxisId="right" orientation="right" tick={{ ...axisTick, fill: right.color }} tickLine={false} axisLine={false} tickFormatter={(v) => fmtRight(v)} width={60} />
+        <Tooltip
+          content={(p) => {
+            const tp = p as unknown as TooltipProps
+            if (!tp.active || !tp.payload?.length) return null
+            return (
+              <div className="card" style={{ padding: '8px 10px', boxShadow: 'var(--shadow)', fontSize: 12 }}>
+                <div className="subtle" style={{ marginBottom: 4 }}>{tp.label}</div>
+                {tp.payload.map((item, i) => (
+                  <div key={i} className="row gap-2" style={{ justifyContent: 'space-between' }}>
+                    <span className="row gap-1"><span className="dot" style={{ color: item.color }} />{item.name}</span>
+                    <span className="num">{tooltipFmt(item.name, item.value ?? 0)}</span>
+                  </div>
+                ))}
+              </div>
+            )
+          }}
+        />
+        <Line yAxisId="left" type="monotone" dataKey="left" name={left.name} stroke={left.color} strokeWidth={2} dot={{ r: 2 }} connectNulls />
+        <Line yAxisId="right" type="monotone" dataKey="right" name={right.name} stroke={right.color} strokeWidth={2} strokeDasharray="5 3" dot={{ r: 2 }} connectNulls />
+      </LineChart>
+    </ResponsiveContainer>
+  )
+}
+
 export function Sparkline({ data, color = 'var(--c-accent)', height = 40, width = '100%' }: { data: Point[]; color?: string; height?: number; width?: number | `${number}%` }) {
   return (
     <ResponsiveContainer width={width} height={height}>

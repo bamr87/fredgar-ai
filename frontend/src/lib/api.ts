@@ -19,6 +19,8 @@ import type {
   Leadership,
   LeadershipAnalysis,
   LeadershipCompare,
+  MacroOverlay,
+  OverlayAgg,
   Paginated,
   PeerFactCompare,
   PeerGroup,
@@ -160,6 +162,25 @@ export const listSeriesBundles = (p?: { page?: number }) =>
   httpGet<Paginated<SeriesBundle>>(`${V}/series-bundles/${qs(p ?? {})}`)
 export const getBundleObservations = (slug: string, perSeries = 2000) =>
   httpGet<BundleObservations>(`${V}/series-bundles/${slug}/observations/${qs({ per_series: perSeries })}`)
+
+// ---- Company vs macro overlay ----
+export type MacroOverlayParams = {
+  metric?: string
+  concepts?: string[]
+  series: string
+  agg?: OverlayAgg
+  annual?: boolean
+}
+export const getMacroOverlay = (id: number, p: MacroOverlayParams) =>
+  httpGet<MacroOverlay>(
+    `${V}/companies/${id}/macro-overlay/${qs({
+      metric: p.metric,
+      concept: p.concepts?.join(','),
+      series: p.series,
+      agg: p.agg,
+      annual: p.annual ? '1' : undefined,
+    })}`,
+  )
 
 // ---- Tasks ----
 export const getTask = (taskId: string) => httpGet<TaskStatus>(`${V}/tasks/${taskId}/`)

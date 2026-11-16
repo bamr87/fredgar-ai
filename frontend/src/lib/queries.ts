@@ -94,6 +94,14 @@ export const useSeriesBundles = () => useQuery({ queryKey: ['series-bundles'], q
 export const useBundleObservations = (slug: string | null) =>
   useQuery({ queryKey: ['bundle-obs', slug], queryFn: () => api.getBundleObservations(slug as string), enabled: !!slug, staleTime: FIVE_MIN })
 
+export const useMacroOverlay = (id: number | null, params: api.MacroOverlayParams | null) =>
+  useQuery({
+    queryKey: ['macro-overlay', id, params],
+    queryFn: () => api.getMacroOverlay(id as number, params as api.MacroOverlayParams),
+    enabled: id != null && !!params?.series,
+    staleTime: FIVE_MIN,
+  })
+
 // ---- Mutations (admin) ----
 export function useSyncSubmissions(id: number) {
   const qc = useQueryClient()

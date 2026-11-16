@@ -27,7 +27,7 @@ Copy [`frontend/.env.example`](.env.example) if you need a template.
 |------|--------|
 | `/` | Dashboard (`Dashboard`) — company search, recently viewed companies, coverage facets, quick links, industry/HQ breakdowns |
 | `/companies` | Company explorer table (`CompanyExplorer`) |
-| `/companies/:id` | Single company detail (`CompanyDetail`) — overview, financials, filings, facts, leadership tabs; Overview and Financials open with a financial-highlights card (latest XBRL facts, compact values with full precision on hover, derived margins and debt/equity), and the Financials trend has a period-over-period change table |
+| `/companies/:id` | Single company detail (`CompanyDetail`) — overview, financials, macro, filings, facts, leadership tabs; Overview and Financials open with a financial-highlights card (latest XBRL facts, compact values with full precision on hover, derived margins and debt/equity), and the Financials trend has a period-over-period change table; the Macro tab (`?tab=macro`) charts a reported concept or derived metric against a stored FRED series per fiscal period on two axes, with Pearson r and CSV export ([docs/api-and-cli.md](../docs/api-and-cli.md#company-vs-macro-overlay)) |
 | `/search` | Full-text filing search (`FilingSearch`) |
 | `/compare` | Cohort comparison (`Compare`) |
 | `/peers` | Peer groups (`PeerGroups`) |
