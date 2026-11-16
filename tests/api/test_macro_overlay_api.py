@@ -110,6 +110,7 @@ def test_unknown_metric_lists_the_known_ones(api_client, company, gdp):
     resp = api_client.get(_url(company.id), {"metric": "nope", "series": "GDP"})
     assert resp.status_code == 400
     assert "gross_margin" in resp.json()["metrics"]
+    assert len(responses.calls) == 0
 
 
 @pytest.mark.parametrize("series_id", ["NOPE", "NEVERSYNCED"])
@@ -122,6 +123,8 @@ def test_series_not_stored_is_404_without_calling_fred(api_client, company, seri
     assert len(responses.calls) == 0
 
 
+@responses.activate
 def test_unknown_company_is_404(api_client, gdp):
     resp = api_client.get(_url(999999), {"concept": "Revenues", "series": "GDP"})
     assert resp.status_code == 404
+    assert len(responses.calls) == 0
