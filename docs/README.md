@@ -33,7 +33,7 @@ Start with the [root README](../README.md) for setup, Docker and tests, and [AGE
 | [`docs/releasing.md`](releasing.md) | How a fredgar-ai release happens: release-please turns Conventional Commit PR titles into a release PR, and merging that PR tags and publishes it. |
 | [`docs/static-site.md`](static-site.md) | The public static mirror on GitHub Pages: what is generated, the `publish_static_site` pipeline, deployment setup, and cross-links with the interactive app. |
 | [`docs/adr/`](adr/README.md) | Index and format of fredgar-ai's Architecture Decision Records — the decisions that are hard to reverse. |
-| [`docs/amendments/`](amendments/README.md) | The append-only log of changes to [the constitution](constitution.md). |
+| [`docs/amendments/`](amendments/README.md) | The append-only log of changes to [the constitution](constitution.md), one numbered record per amendment. |
 | [`docs/notes/`](notes/README.md) | Dated design essays on the enrichment framework, kept for the reasoning behind its rules rather than as reference. |
 
 ### `docs/reference/`
