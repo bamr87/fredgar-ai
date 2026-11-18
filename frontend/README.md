@@ -38,7 +38,7 @@ Copy [`frontend/.env.example`](.env.example) if you need a template.
 ## Layout
 
 - [`src/App.tsx`](src/App.tsx) — route table (lazy-loaded pages)
-- [`src/layout/AppShell.tsx`](src/layout/AppShell.tsx) — sidebar nav, global search, theme toggle, backend-readiness indicator
+- [`src/layout/AppShell.tsx`](src/layout/AppShell.tsx) — "Skip to content" link (the first focusable element on every route), sidebar nav, global search, theme toggle, backend-readiness indicator, and the one `<main id="main-content">` landmark the routed page renders in
 - [`src/lib/api.ts`](src/lib/api.ts) — typed fetch helpers for `/api/v1/`; [`src/lib/http.ts`](src/lib/http.ts) — base fetch, auth token + SEC email headers
 - [`src/lib/format.ts`](src/lib/format.ts) — display formatters (compact money, per-share, full-precision tooltips, unit labels); [`src/lib/finance.ts`](src/lib/finance.ts) — KPI concept chains, client-side margins/ratios, period-over-period change
 - [`src/pages/`](src/pages/) — one module per route (e.g. `Dashboard.tsx`, `CompanyExplorer.tsx`, `CompanyDetail.tsx`), with company detail tabs under [`src/pages/company/`](src/pages/company/)
