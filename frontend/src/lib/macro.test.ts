@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { applyTransform, changeOver, isRateUnit, seriesStats, type RawPoint } from './macro'
+import {
+  applyTransform,
+  changeOver,
+  isPercentTransform,
+  isRateUnit,
+  parseTransform,
+  serverUnits,
+  seriesStats,
+  type RawPoint,
+} from './macro'
 
 // Monthly-ish points: value doubles over 12 steps.
 const monthly: RawPoint[] = Array.from({ length: 25 }, (_, i) => ({
@@ -8,8 +17,8 @@ const monthly: RawPoint[] = Array.from({ length: 25 }, (_, i) => ({
 }))
 
 describe('applyTransform', () => {
-  it('level passes values through', () => {
-    const out = applyTransform(monthly, 'level')
+  it('levels pass values through', () => {
+    const out = applyTransform(monthly, 'lin')
     expect(out[0].y).toBe(100)
     expect(out[out.length - 1].y).toBe(340)
   })
@@ -18,12 +27,34 @@ describe('applyTransform', () => {
     expect(out[0].y).toBe(100)
     expect(out[12].y).toBeCloseTo((220 / 100) * 100, 5)
   })
-  it('yoy computes year-over-year percent change', () => {
-    const out = applyTransform(monthly, 'yoy')
-    // first 12 months have no 1y-prior point
-    expect(out[0].y).toBeNull()
-    // month 12 (value 220) vs month 0 (value 100) => +120%
-    expect(out[12].y).toBeCloseTo(120, 1)
+  it('FRED units pass the server-computed values through', () => {
+    // The API already applied pc1; the browser must not transform them again.
+    const out = applyTransform(monthly, 'pc1')
+    expect(out.map((p) => p.y)).toEqual(monthly.map((p) => p.value))
+  })
+})
+
+describe('the Units control', () => {
+  it('reads old level / yoy links as lin / pc1', () => {
+    expect(parseTransform('level')).toBe('lin')
+    expect(parseTransform('yoy')).toBe('pc1')
+  })
+  it('keeps a known unit and falls back to lin', () => {
+    expect(parseTransform('cca')).toBe('cca')
+    expect(parseTransform('index')).toBe('index')
+    expect(parseTransform('bogus')).toBe('lin')
+    expect(parseTransform(null)).toBe('lin')
+  })
+  it('asks the API for levels when indexing client-side', () => {
+    expect(serverUnits('index')).toBe('lin')
+    expect(serverUnits('pc1')).toBe('pc1')
+  })
+  it('knows which units are percentages', () => {
+    expect(isPercentTransform('pc1')).toBe(true)
+    expect(isPercentTransform('cca')).toBe(true)
+    expect(isPercentTransform('chg')).toBe(false)
+    expect(isPercentTransform('log')).toBe(false)
+    expect(isPercentTransform('index')).toBe(false)
   })
 })
 

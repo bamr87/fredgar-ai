@@ -19,6 +19,8 @@ updates:
     groups:
       npm:
         patterns: ["*"]
+        # TypeScript gets its own PR: a major waits there until typescript-eslint's peer range accepts it (TS 7, #103).
+        exclude-patterns: ["typescript"]
 
   # GitHub Actions used by CI.
   - package-ecosystem: "github-actions"

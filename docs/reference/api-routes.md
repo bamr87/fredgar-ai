@@ -27,8 +27,8 @@ Paths are relative to the API host. The canonical base is `/api/v1/`. The root U
 
 | Method | Path | View | Access | Params | Summary |
 | --- | --- | --- | --- | --- | --- |
-| GET | `/api/v1/health/` | `HealthView` | public | — | Liveness probe; does not check the database. |
-| GET | `/api/v1/health/ready/` | `HealthReadyView` | public | — | Readiness: verifies app can reach the default database. |
+| GET | `/api/v1/health/` | `HealthView` | public | — | Liveness probe (`/healthz`, alias `/api/v1/health/`); touches no dependency. |
+| GET | `/api/v1/health/ready/` | `HealthReadyView` | public | — | Readiness probe (`/readyz`, alias `/api/v1/health/ready/`): database, cache and Celery broker. |
 | GET | `/api/v1/reference/sic-codes/` | `SicCodesReferenceView` | public | query `limit`, `code`, `q` | SEC SIC master list (from `data/reference/sic_codes.json`) for lookup and autocomplete. |
 | GET | `/api/v1/tasks/{task_id}/` | `TaskStatusView` | `IsAdminUser` | — | Celery task state for an async job dispatched by a sync action. |
 | GET | `/api/v1/schema/` | `SpectacularAPIView` | `AllowAny` | — | Provided by `drf_spectacular`. |
@@ -60,7 +60,7 @@ Paths are relative to the API host. The canonical base is `/api/v1/`. The root U
 | GET | `/api/v1/filings/` | `FilingViewSet.list` | `IsAdminOrReadOnly` | — | — |
 | POST | `/api/v1/filings/ingest-htm/` | `FilingViewSet.ingest_htm` | `IsAdminOrReadOnly` | body `url`, `ticker`, `cik` | Parse one HTM filing URL into `Filing` / related rows (same service as `ingest_htm` command). |
 | POST | `/api/v1/filings/ingest-submission/` | `FilingViewSet.ingest_submission` | `IsAdminOrReadOnly` | body `url`, `ticker`, `cik` | Ingest a full SEC submission (.txt) into Filing + FilingDocument rows. |
-| GET | `/api/v1/filings/search/` | `FilingViewSet.search_documents` | `IsAdminOrReadOnly` | query `q`, `form_type`, `cik` | Full-text search across ingested FilingDocument text. |
+| GET | `/api/v1/filings/search/` | `FilingViewSet.search_documents` | `IsAdminOrReadOnly` | query `q`, `form_type`, `cik` | Full-text search across ingested FilingDocument text, optionally narrowed by `form_type` and `cik`; 400 when `q` is shorter than 2 characters or `cik` is not a valid SEC CIK. |
 | GET | `/api/v1/filings/{pk}/` | `FilingViewSet.retrieve` | `IsAdminOrReadOnly` | — | — |
 | GET | `/api/v1/facts/` | `FactViewSet.list` | `IsAdminOrReadOnly` | — | — |
 | GET | `/api/v1/facts/facets/` | `FactViewSet.facets` | `IsAdminOrReadOnly` | query `company` | Per-company fact aggregates: taxonomies, top concepts and years (`company` required). |
@@ -87,4 +87,4 @@ Paths are relative to the API host. The canonical base is `/api/v1/`. The root U
 | GET | `/api/v1/public-observations/{pk}/` | `SeriesObservationViewSet.retrieve` | `IsAdminOrReadOnly` | — | — |
 | GET | `/api/v1/series-bundles/` | `SeriesBundleViewSet.list` | `IsAdminOrReadOnly` | — | — |
 | GET | `/api/v1/series-bundles/{slug}/` | `SeriesBundleViewSet.retrieve` | `IsAdminOrReadOnly` | — | — |
-| GET | `/api/v1/series-bundles/{slug}/observations/` | `SeriesBundleViewSet.observations` | `IsAdminOrReadOnly` | query `per_series`, `limit` | Recent observations + series metadata for every series in this bundle. |
+| GET | `/api/v1/series-bundles/{slug}/observations/` | `SeriesBundleViewSet.observations` | `IsAdminOrReadOnly` | query `units`, `frequency`, `aggregation`, `vintage_date`, `per_series`, `limit` | Recent observations + series metadata for every series in this bundle. |
