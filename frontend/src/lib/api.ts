@@ -35,7 +35,8 @@ const V = '/api/v1'
 
 // ---- Health & reference ----
 export const getHealth = () => httpGet<Health>(`${V}/health/`)
-export const getReady = () => httpGet<Health>(`${V}/health/ready/`)
+// Root readiness probe (UPS-BE-11); Vite and nginx proxy it beside /api.
+export const getReady = () => httpGet<Health>('/readyz')
 export const getSicCodes = (p: { q?: string; code?: string; limit?: number }) =>
   httpGet<SicResponse>(`${V}/reference/sic-codes/${qs({ ...p, limit: p.limit ?? 40 })}`)
 

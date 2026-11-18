@@ -329,6 +329,7 @@ export type TaskStatus = {
 }
 
 // ---- Health & reference ----
-export type Health = { status: string; checks?: Record<string, boolean> }
+/** `/healthz` and `/readyz`: each check is `ok`, `skipped` or an `error: …` string. */
+export type Health = { status: 'ok' | 'degraded' | string; checks?: Record<string, string> }
 export type SicCode = { code: string; description?: string; office?: string; industry_title?: string }
 export type SicResponse = { count: number; results: SicCode[] }

@@ -27,8 +27,8 @@ Paths are relative to the API host. The canonical base is `/api/v1/`. The root U
 
 | Method | Path | View | Access | Params | Summary |
 | --- | --- | --- | --- | --- | --- |
-| GET | `/api/v1/health/` | `HealthView` | public | — | Liveness probe; does not check the database. |
-| GET | `/api/v1/health/ready/` | `HealthReadyView` | public | — | Readiness: verifies app can reach the default database. |
+| GET | `/api/v1/health/` | `HealthView` | public | — | Liveness probe (`/healthz`, alias `/api/v1/health/`); touches no dependency. |
+| GET | `/api/v1/health/ready/` | `HealthReadyView` | public | — | Readiness probe (`/readyz`, alias `/api/v1/health/ready/`): database, cache and Celery broker. |
 | GET | `/api/v1/reference/sic-codes/` | `SicCodesReferenceView` | public | query `limit`, `code`, `q` | SEC SIC master list (from `data/reference/sic_codes.json`) for lookup and autocomplete. |
 | GET | `/api/v1/tasks/{task_id}/` | `TaskStatusView` | `IsAdminUser` | — | Celery task state for an async job dispatched by a sync action. |
 | GET | `/api/v1/schema/` | `SpectacularAPIView` | `AllowAny` | — | Provided by `drf_spectacular`. |
