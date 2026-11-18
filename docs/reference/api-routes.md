@@ -60,7 +60,7 @@ Paths are relative to the API host. The canonical base is `/api/v1/`. The root U
 | GET | `/api/v1/filings/` | `FilingViewSet.list` | `IsAdminOrReadOnly` | — | — |
 | POST | `/api/v1/filings/ingest-htm/` | `FilingViewSet.ingest_htm` | `IsAdminOrReadOnly` | body `url`, `ticker`, `cik` | Parse one HTM filing URL into `Filing` / related rows (same service as `ingest_htm` command). |
 | POST | `/api/v1/filings/ingest-submission/` | `FilingViewSet.ingest_submission` | `IsAdminOrReadOnly` | body `url`, `ticker`, `cik` | Ingest a full SEC submission (.txt) into Filing + FilingDocument rows. |
-| GET | `/api/v1/filings/search/` | `FilingViewSet.search_documents` | `IsAdminOrReadOnly` | query `q`, `form_type`, `cik` | Full-text search across ingested FilingDocument text. |
+| GET | `/api/v1/filings/search/` | `FilingViewSet.search_documents` | `IsAdminOrReadOnly` | query `q`, `form_type`, `cik` | Full-text search across ingested FilingDocument text, optionally narrowed by `form_type` and `cik`; 400 when `q` is shorter than 2 characters or `cik` is not a valid SEC CIK. |
 | GET | `/api/v1/filings/{pk}/` | `FilingViewSet.retrieve` | `IsAdminOrReadOnly` | — | — |
 | GET | `/api/v1/facts/` | `FactViewSet.list` | `IsAdminOrReadOnly` | — | — |
 | GET | `/api/v1/facts/facets/` | `FactViewSet.facets` | `IsAdminOrReadOnly` | query `company` | Per-company fact aggregates: taxonomies, top concepts and years (`company` required). |
