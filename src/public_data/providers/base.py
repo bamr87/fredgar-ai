@@ -10,11 +10,19 @@ from typing import Protocol
 class ObservationPoint:
     observation_date: date
     value: Decimal
+    # The real-time period the provider reported for the value (FRED/ALFRED vintages).
+    realtime_start: date | None = None
+    realtime_end: date | None = None
 
 
 class PublicDataProvider(Protocol):
     provider_slug: str
 
     def fetch_series_observations(
-        self, external_id: str, observation_start: date | None = None
+        self,
+        external_id: str,
+        observation_start: date | None = None,
+        *,
+        realtime_start: date | None = None,
+        realtime_end: date | None = None,
     ) -> tuple[list[ObservationPoint], str]: ...

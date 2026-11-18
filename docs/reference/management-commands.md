@@ -26,6 +26,7 @@ Run them from `src/`: `cd src && python manage.py <command> [options]`. `python 
 | `load_series_bundle` | Load a JSON bundle definition into SeriesBundle + ExternalSeries registry. | `--file` |
 | `refresh_series_bundles` | Load all bundle JSONs in the bundles dir and sync their observations. | `--dir`, `--no-sync`, `--delay`, `--days-back` |
 | `sync_series_bundle` | Fetch observations for all series in a named bundle (requires FRED_API_KEY for FRED). | `--slug`, `--days-back`, `--delay` |
+| `sync_series_vintage` | Fetch and store a FRED series as known on a past date (ALFRED vintage); needs ENABLE_FRED_VINTAGES and FRED_API_KEY. | `--series (required)`, `--as-of (required)` |
 
 ## `sec_edgar`
 
