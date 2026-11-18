@@ -52,3 +52,5 @@ CRM JSON loads into `CrmCompanyRecord`. Title matching links rows to SEC issuers
 ## Macro data (FRED)
 
 `SeriesBundle` groups `ExternalSeries` IDs. `load_series_bundle` registers definitions; `sync_series_bundle` pulls observations when `FRED_API_KEY` is set. Incremental FRED pulls today use a sliding `days_back` window; the [extract-store spec](distributed-storage.md) replaces that with a `last_updated` + last-observation cursor so unchanged series are not re-fetched.
+
+The observation endpoints can return a series with FRED's unit transforms and frequency aggregation, computed from the stored observations by the pure functions in [`public_data/services/transforms.py`](../src/public_data/services/transforms.py). Behind `ENABLE_FRED_VINTAGES`, they can also return a series as FRED published it on a past date: an ALFRED vintage, fetched once and stored in the `warehouse` model `SeriesVintageObservation`, DB-first like the SEC payloads. See [api-and-cli.md](api-and-cli.md#macro-series-fred-transforms-and-vintages).

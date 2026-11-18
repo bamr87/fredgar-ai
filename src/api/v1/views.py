@@ -1,5 +1,10 @@
+import json
 import logging
+import os
+from pathlib import Path
 
+from django.conf import settings
+from django.core.cache import cache
 from django.db import connection
 from django.db.models import Count
 from django.db.models.functions import TruncYear
@@ -13,6 +18,14 @@ from rest_framework.views import APIView
 
 from enrichment.services import dataset_report
 from public_data.models import ExternalSeries, SeriesBundle, SeriesObservation
+from public_data.services.observations import (
+    SeriesTransform,
+    newest_first,
+    parse_series_transform,
+    transformed_observations,
+)
+from public_data.services.transforms import TransformError
+from public_data.services.vintages import VintageNotStored, VintageUnavailable
 from sec_edgar.exceptions import EdgarRateLimitError, EdgarResolutionError
 from sec_edgar.services.sic_reference import (
     search_sic_codes,  # reference-data tier (not EDGAR sync)
@@ -72,33 +85,114 @@ def _wants_async(request) -> bool:
     return str(raw).strip().lower() in ("1", "true", "yes", "on")
 
 
-class HealthView(APIView):
-    """Liveness probe; does not check the database."""
+_NO_STORE = {"Cache-Control": "no-store"}
+
+
+class _ProbeView(APIView):
+    """Base for the UPS-BE-10/11 probes: anonymous, unthrottled, never cached."""
 
     authentication_classes: list = []
     permission_classes: list = []
-    throttle_classes: list = []  # liveness must never be throttled
+    throttle_classes: list = []  # probes must never be throttled
+
+
+class HealthView(_ProbeView):
+    """Liveness probe (``/healthz``, alias ``/api/v1/health/``); touches no dependency."""
 
     def get(self, request):
-        return Response({"status": "ok"})
+        return Response({"status": "ok"}, headers=_NO_STORE)
 
 
-class HealthReadyView(APIView):
-    """Readiness: verifies app can reach the default database."""
+def _probe_error(exc: Exception) -> str:
+    # Probes are public, so name the failure class only; the detail goes to the log.
+    return f"error: {type(exc).__name__}"
 
-    authentication_classes: list = []
-    permission_classes: list = []
-    throttle_classes: list = []  # readiness must never be throttled
 
-    def get(self, request):
+def _check_db() -> str:
+    # A round trip, not just ensure_connection(): with persistent connections
+    # (conn_max_age) an open-but-dead connection would otherwise report ok.
+    try:
+        connection.ensure_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+    except Exception as exc:
+        logger.warning("readiness: database check failed: %s", exc)
+        return _probe_error(exc)
+    return "ok"
+
+
+def _check_cache() -> str:
+    try:
+        cache.set("readyz:probe", "1", timeout=5)
+        if cache.get("readyz:probe") != "1":
+            return "error: cache read-back mismatch"
+    except Exception as exc:
+        logger.warning("readiness: cache check failed: %s", exc)
+        return _probe_error(exc)
+    return "ok"
+
+
+def _check_broker() -> str:
+    """Ping the Celery Redis broker; ``skipped`` when tasks run eagerly or it is not Redis."""
+    url = getattr(settings, "CELERY_BROKER_URL", "") or ""
+    if getattr(settings, "CELERY_TASK_ALWAYS_EAGER", False) or not url.startswith(
+        ("redis://", "rediss://")
+    ):
+        return "skipped"
+    try:
+        import redis
+
+        client = redis.Redis.from_url(url, socket_connect_timeout=1, socket_timeout=1)
         try:
-            connection.ensure_connection()
-        except Exception:
-            return Response(
-                {"status": "unready", "checks": {"database": False}},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE,
-            )
-        return Response({"status": "ok", "checks": {"database": True}})
+            client.ping()
+        finally:
+            client.close()
+    except Exception as exc:
+        logger.warning("readiness: broker check failed: %s", exc)
+        return _probe_error(exc)
+    return "ok"
+
+
+class HealthReadyView(_ProbeView):
+    """Readiness probe (``/readyz``, alias ``/api/v1/health/ready/``): database, cache and Celery broker.
+
+    200 ``{"status": "ok", "checks": {...}}`` when every check is ``ok`` or ``skipped``;
+    503 ``{"status": "degraded", ...}`` with an error string under each failed check.
+    """
+
+    def get(self, request):
+        checks = {"db": _check_db(), "cache": _check_cache(), "broker": _check_broker()}
+        healthy = all(v in ("ok", "skipped") for v in checks.values())
+        return Response(
+            {"status": "ok" if healthy else "degraded", "checks": checks},
+            status=status.HTTP_200_OK if healthy else status.HTTP_503_SERVICE_UNAVAILABLE,
+            headers=_NO_STORE,
+        )
+
+
+def _release_version() -> str:
+    """The release-please version (manifest ``"."`` key), ``unknown`` if the manifest is absent."""
+    manifest = Path(settings.BASE_DIR).parent / ".release-please-manifest.json"
+    try:
+        return str(json.loads(manifest.read_text(encoding="utf-8"))["."])
+    except (OSError, ValueError, KeyError) as exc:
+        logger.warning("version: cannot read %s: %s", manifest, exc)
+        return "unknown"
+
+
+class VersionView(_ProbeView):
+    """Build identity (``/version``): name, release version, commit and build time."""
+
+    def get(self, request):
+        return Response(
+            {
+                "name": "fredgar-ai",
+                "version": _release_version(),
+                "commit": os.getenv("GIT_SHA", "").strip() or "unknown",
+                "built_at": os.getenv("BUILT_AT", "").strip() or "unknown",
+            },
+            headers=_NO_STORE,
+        )
 
 
 class TaskStatusView(APIView):
@@ -904,10 +998,13 @@ class FilingViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="search")
     def search_documents(self, request):
-        """Full-text search across ingested FilingDocument text.
+        """Full-text search across ingested FilingDocument text, optionally narrowed by
+        ``form_type`` and ``cik``; 400 when ``q`` is shorter than 2 characters or ``cik``
+        is not a valid SEC CIK.
 
-        Postgres uses ``SearchVector``/``SearchRank``; other backends fall back to
-        a case-insensitive substring match.
+        A missing or empty ``cik`` searches every company. Postgres uses
+        ``SearchVector``/``SearchRank``; other backends fall back to a
+        case-insensitive substring match.
         """
         from django.db import connection
 
@@ -928,7 +1025,10 @@ class FilingViewSet(viewsets.ReadOnlyModelViewSet):
             try:
                 qs = qs.filter(filing__company__cik=normalize_cik(cik))
             except ValueError:
-                pass
+                return Response(
+                    {"detail": "cik must be a valid SEC CIK (digits, up to 10)."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         if connection.vendor == "postgresql":
             from django.contrib.postgres.search import (
@@ -1077,6 +1177,26 @@ class PeerGroupViewSet(viewsets.ModelViewSet):
         )
 
 
+def _series_transform(request) -> SeriesTransform | None:
+    """The FRED transform a series request asks for (``units``, ``frequency``, ``aggregation``, ``vintage_date``).
+
+    None when it names none of them, so the endpoint answers exactly as before. Raises
+    ``TransformError`` (a 400) on an unknown value or a refused ``vintage_date``.
+    """
+    qp = request.query_params
+    return parse_series_transform(
+        units=qp.get("units"),
+        frequency=qp.get("frequency"),
+        aggregation=qp.get("aggregation"),
+        vintage_date=qp.get("vintage_date"),
+    )
+
+
+def _may_fetch_vintages(request) -> bool:
+    """Fetching a missing vintage calls FRED and writes rows, a sync action: staff only."""
+    return bool(request.user and request.user.is_staff)
+
+
 class ExternalSeriesViewSet(viewsets.ReadOnlyModelViewSet):
     """The external time-series catalog (FRED and other providers)."""
 
@@ -1086,11 +1206,56 @@ class ExternalSeriesViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class SeriesObservationViewSet(viewsets.ReadOnlyModelViewSet):
-    """Observations of the external time series."""
+    """Observations of the external time series.
+
+    With ``units``, ``frequency`` (and ``aggregation``) or ``vintage_date``, the list is
+    one ``series`` transformed the FRED way, newest first, each row holding ``series``,
+    ``observation_date`` and ``value``, with the applied ``transform`` and the
+    ``output_frequency`` echoed beside the page. Only staff can make a request fetch a
+    vintage that is not stored yet. See docs/api-and-cli.md.
+    """
 
     queryset = SeriesObservation.objects.all().order_by("-observation_date")
     serializer_class = SeriesObservationSerializer
     filterset_fields = ["series"]
+
+    def list(self, request, *args, **kwargs):
+        try:
+            transform = _series_transform(request)
+        except TransformError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        if transform is None:
+            return super().list(request, *args, **kwargs)
+        try:
+            series_id = int(request.query_params.get("series") or "")
+        except ValueError:
+            detail = "series (an id from /public-series/) is required to transform observations"
+            return Response({"detail": detail}, status=status.HTTP_400_BAD_REQUEST)
+        series = ExternalSeries.objects.filter(pk=series_id).first()
+        if series is None:
+            return Response({"detail": "Series not found."}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            result = transformed_observations(
+                series, transform, strict=True, fetch_missing=_may_fetch_vintages(request)
+            )
+        except TransformError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        except VintageNotStored as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_403_FORBIDDEN)
+        except VintageUnavailable as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+        rows = [
+            {"series": series.pk, "observation_date": day.isoformat(), "value": value}
+            for day, value in newest_first(result)
+        ]
+        page = self.paginate_queryset(rows)
+        if page is None:
+            response = Response({"results": rows})
+        else:
+            response = self.get_paginated_response(page)
+        response.data["transform"] = transform.echo()
+        response.data["output_frequency"] = result.frequency
+        return response
 
 
 class SeriesBundleViewSet(viewsets.ReadOnlyModelViewSet):
@@ -1106,8 +1271,15 @@ class SeriesBundleViewSet(viewsets.ReadOnlyModelViewSet):
 
         Limit is applied *per series* (``per_series``) so high-frequency (daily)
         series aren't truncated by lower-frequency ones sharing the bundle.
+        ``units``, ``frequency`` (and ``aggregation``) and ``vintage_date`` return the
+        FRED-transformed values instead, with the applied ``transform`` echoed and each
+        series' ``output_frequency``; see docs/api-and-cli.md.
         """
         bundle = self.get_object()
+        try:
+            transform = _series_transform(request)
+        except TransformError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         try:
             per = int(request.query_params.get("per_series") or request.query_params.get("limit") or 1500)
         except ValueError:
@@ -1115,42 +1287,58 @@ class SeriesBundleViewSet(viewsets.ReadOnlyModelViewSet):
         per = max(1, min(per, 8000))
 
         items = list(bundle.items.select_related("series").order_by("sort_order"))
+        fetch_missing = _may_fetch_vintages(request)
         series_meta: list[dict] = []
         data: list[dict] = []
         for item in items:
             s = item.series
             meta = s.metadata or {}
-            series_meta.append(
-                {
-                    "external_id": s.external_id,
-                    "title": s.title,
-                    "units": s.units,
-                    "frequency": s.frequency,
-                    "note": meta.get("note", ""),
-                    "industries": meta.get("industries", []),
-                }
-            )
-            for o in (
-                SeriesObservation.objects.filter(series=s).order_by("-observation_date")[:per]
-            ):
+            entry = {
+                "external_id": s.external_id,
+                "title": s.title,
+                "units": s.units,
+                "frequency": s.frequency,
+                "note": meta.get("note", ""),
+                "industries": meta.get("industries", []),
+            }
+            series_meta.append(entry)
+            if transform is None:
+                values = [
+                    (o.observation_date, str(o.value))
+                    for o in SeriesObservation.objects.filter(series=s).order_by("-observation_date")[:per]
+                ]
+            else:
+                # A series whose own frequency is lower than the one asked for keeps its own.
+                try:
+                    result = transformed_observations(
+                        s, transform, strict=False, fetch_missing=fetch_missing
+                    )
+                except VintageUnavailable as exc:
+                    entry["output_frequency"] = None
+                    entry["error"] = str(exc)
+                    continue
+                entry["output_frequency"] = result.frequency
+                values = newest_first(result)[:per]
+            for day, value in values:
                 data.append(
                     {
                         "series": s.external_id,
                         "provider": s.provider,
-                        "date": o.observation_date.isoformat(),
-                        "value": str(o.value),
+                        "date": day.isoformat(),
+                        "value": value,
                     }
                 )
-        return Response(
-            {
-                "bundle": bundle.slug,
-                "name": bundle.name,
-                "description": bundle.description,
-                "count": len(data),
-                "series": series_meta,
-                "observations": data,
-            }
-        )
+        payload = {
+            "bundle": bundle.slug,
+            "name": bundle.name,
+            "description": bundle.description,
+            "count": len(data),
+            "series": series_meta,
+            "observations": data,
+        }
+        if transform is not None:
+            payload["transform"] = transform.echo()
+        return Response(payload)
 
 
 class EnrichmentDatasetViewSet(viewsets.ReadOnlyModelViewSet):

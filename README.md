@@ -1,12 +1,12 @@
 # Fredgar AI
 
-> Django + React app for exploring SEC EDGAR company data and FRED macro series, with AI-assisted summaries.
+> Fredgar AI's direction is to become the ultimate open home for all things financial: data, tools, resources and transparency, with queryable and auditable SEC EDGAR and FRED data, cited AI, and API-first access for everyone ([constitution](docs/constitution.md) §1).
 
 [![CI](https://github.com/bamr87/fredgar-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/bamr87/fredgar-ai/actions/workflows/ci.yml) [![License](https://img.shields.io/github/license/bamr87/fredgar-ai)](LICENSE) [![Live site](https://img.shields.io/badge/live-bamr87.github.io%2Ffredgar--ai-2ea44f)](https://bamr87.github.io/fredgar-ai/)
 
 ## Overview
 
-**Fredgar AI** (FRED + EDGAR, with AI) is a Django + Django REST Framework backend with a Vite/React UI for **SEC EDGAR** company data and optional **FRED** macro series, with AI-assisted interpretation and summaries. A weekly GitHub Pages build publishes a static, no-login mirror of the warehouse at [bamr87.github.io/fredgar-ai](https://bamr87.github.io/fredgar-ai/).
+**Fredgar AI** (FRED + EDGAR, with AI) aims to become the ultimate open home for all things financial — data, tools, resources and transparency for all stakeholders, finance professionals and the general public — starting with **SEC EDGAR** company data and optional **FRED** macro series, a Django + Django REST Framework backend, and a Vite/React UI, with AI-assisted summaries grounded in filing text. A weekly GitHub Pages build publishes a static, no-login mirror of the warehouse at [bamr87.github.io/fredgar-ai](https://bamr87.github.io/fredgar-ai/). The missions are in [constitution §1](docs/constitution.md#1-missions).
 
 ## Features
 
@@ -54,6 +54,7 @@ See [`src/.env.example`](src/.env.example). Important:
 
 - **`USER_AGENT_EMAIL`**: SEC requires a descriptive `User-Agent` identifying you.
 - **`FRED_API_KEY`**: needed for `sync_series_bundle` / FRED observations.
+- **`ENABLE_FRED_VINTAGES`**: off by default; turns on ALFRED vintages (`?vintage_date=`, `sync_series_vintage`).
 - **`DJANGO_SECRET_KEY`**: set a strong value when `DJANGO_DEBUG=false`.
 
 ## Common tasks
@@ -70,6 +71,7 @@ python manage.py generate_static_site --ticker AAPL --output ../site   # static 
 python manage.py publish_static_site --output ../site   # sync the default cohort from SEC + render (the GitHub Pages build)
 python manage.py refresh_series_bundles            # register + FRED-sync all series bundles
 python manage.py sync_series_bundle --slug core    # or sync one bundle by slug (needs FRED_API_KEY)
+python manage.py sync_series_vintage --series GDPC1 --as-of 2020-01-01   # a series as FRED published it then (ENABLE_FRED_VINTAGES)
 ```
 
 The same sync actions are on the API, for example `POST /api/v1/companies/{id}/sync-submissions/`. Every route and command is listed in the generated [`docs/reference/`](docs/reference/), and [`docs/api-and-cli.md`](docs/api-and-cli.md) explains how they fit together. The static site renders offline HTML — one page per company with statements, derived metrics, filings and facts, each with copy and CSV/JSON downloads — and [`.github/workflows/pages.yml`](.github/workflows/pages.yml) publishes it weekly; see [`docs/static-site.md`](docs/static-site.md).
@@ -82,13 +84,13 @@ From the repo root, PostgreSQL + the API on port 8000, with `./data` mounted for
 
 ```bash
 docker compose up -d --build
-curl -s http://127.0.0.1:8000/api/v1/health/
+curl -s http://127.0.0.1:8000/healthz         # liveness; /readyz checks db, cache and broker; /version names the build
 docker compose --profile dev up -d --build    # + Vite dev UI on :5173, proxying /api to the API container
 docker compose --profile prod up -d --build   # + static UI behind nginx on :8080, same-origin /api
 docker compose --profile ci run --rm test     # CI-style checks against Postgres
 ```
 
-Optional env (shell or a `.env` next to `docker-compose.yml`): `DJANGO_SECRET_KEY`, `USER_AGENT_EMAIL`, `DJANGO_DEBUG`, `CORS_ALLOWED_ORIGINS`. The container scripts are described in [`docker/README.md`](docker/README.md). A single-image build without Compose also works: `docker build -t fredgar-ai .` then `docker run -p 8000:8000 -e USER_AGENT_EMAIL=you@example.com fredgar-ai`.
+Optional env (shell or a `.env` next to `docker-compose.yml`): `DJANGO_SECRET_KEY`, `USER_AGENT_EMAIL`, `DJANGO_DEBUG`, `CORS_ALLOWED_ORIGINS`. The container scripts are described in [`docker/README.md`](docker/README.md). A single-image build without Compose also works: `docker build -t fredgar-ai .` (add `--build-arg GIT_SHA=$(git rev-parse --short HEAD) --build-arg BUILT_AT=$(date -u +%FT%TZ)` to fill `/version`) then `docker run -p 8000:8000 -e USER_AGENT_EMAIL=you@example.com fredgar-ai`.
 
 ## Documentation
 
@@ -115,7 +117,7 @@ Build, test and lint commands are in [Quick start](#quick-start); `make all` run
 
 ## Contributing
 
-Contributions are welcome via pull request. Use [Conventional Commits](https://www.conventionalcommits.org/) and keep the CI checks green. See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow; AI agents start with [AGENTS.md](AGENTS.md).
+Contributions are welcome via pull request. Use [Conventional Commits](https://www.conventionalcommits.org/) and keep the CI checks green. See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow; AI agents start with [AGENTS.md](AGENTS.md). Report security issues privately as described in [SECURITY.md](SECURITY.md), never in a public issue.
 
 ## Changelog
 

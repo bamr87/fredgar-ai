@@ -130,14 +130,24 @@ features:
     provenance: { introduced_in: "PRD.md §4.6 FR-ALR-001", issue: "https://github.com/bamr87/fredgar-ai/issues/111" }
   - id: FREDGAR-012
     title: "FRED transforms and vintages"
-    description: "FRED unit transforms, frequency aggregation and optional vintage (ALFRED) views on series observations."
-    implemented: false
-    status: planned
+    description: "FRED unit transforms (lin, chg, ch1, pch, pc1, pca, cch, cca, log) and frequency aggregation (avg, sum, eop) on series observations, computed server-side by FRED's formulas and offered on the Macro page; optional vintage (ALFRED) views behind ENABLE_FRED_VINTAGES, fetched once and stored by vintage date."
+    implemented: true
+    status: shipped
     prd: ["FR-MAC-001"]
     surface: api
-    docs: "PRD.md"
+    link: "src/public_data/services/transforms.py"
+    docs: "docs/api-and-cli.md"
+    tags: [macro, fred, transforms, vintages]
     date: 2026-11-02
     provenance: { introduced_in: "PRD.md §4.6 FR-MAC-001", issue: "https://github.com/bamr87/fredgar-ai/issues/112" }
+    tests:
+      - tests/public_data/test_transforms.py
+      - tests/public_data/test_vintages.py
+      - tests/api/test_series_transforms_api.py
+      - frontend/src/lib/api.test.ts
+      - frontend/src/lib/macro.test.ts
+    scenarios: []
+    evidence: []
   - id: FREDGAR-013
     title: "Company metric vs macro overlay"
     description: "Chart a company metric against a FRED series on an aligned time axis with correlation and CSV export: GET /api/v1/companies/{id}/macro-overlay/ aligns an XBRL concept chain or derived metric with a stored FRED series per fiscal period (avg or eop, partly covered periods dropped) and returns Pearson r; the company page's Macro tab charts both on two axes and exports CSV. Implements proposed PRD requirement FR-ANL-002."

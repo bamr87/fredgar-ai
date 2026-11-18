@@ -28,3 +28,7 @@ REST_FRAMEWORK = {  # noqa: F405
 ENABLE_AI_ANALYSIS = False
 AI_ANALYSIS_AUTH_TOKEN = ""
 AI_ANALYSIS_API_KEY = ""
+
+# FRED vintages fetch from FRED on demand; keep them off whatever src/.env says, and let
+# the tests that exercise them switch them on with a mocked FRED.
+ENABLE_FRED_VINTAGES = False
