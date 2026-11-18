@@ -100,6 +100,14 @@ export const useBundleObservations = (slug: string | null, t: api.SeriesTransfor
     staleTime: FIVE_MIN,
   })
 
+export const useMacroOverlay = (id: number | null, params: api.MacroOverlayParams | null) =>
+  useQuery({
+    queryKey: ['macro-overlay', id, params],
+    queryFn: () => api.getMacroOverlay(id as number, params as api.MacroOverlayParams),
+    enabled: id != null && !!params?.series,
+    staleTime: FIVE_MIN,
+  })
+
 // ---- Mutations (admin) ----
 export function useSyncSubmissions(id: number) {
   const qc = useQueryClient()

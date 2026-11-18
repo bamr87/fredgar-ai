@@ -336,6 +336,37 @@ export type BundleObservations = {
   transform?: SeriesTransform
 }
 
+// ---- Company vs macro overlay (FREDGAR-013) ----
+export type OverlayAgg = 'avg' | 'eop'
+export type MacroOverlayRow = {
+  period_start: string | null
+  period_end: string
+  company_value: number
+  series_value: number
+  series_observations: number
+}
+export type MacroOverlay = {
+  company: number
+  company_series: {
+    source: 'concept' | 'metric'
+    key: string
+    concepts: string[] | null
+    taxonomy: string
+    unit: string | null
+    annual: boolean
+  }
+  series: { external_id: string; provider: string; title: string; units: string; frequency: string }
+  alignment: {
+    window: 'fiscal'
+    aggregation: OverlayAgg
+    series_step_days: number | null
+    description: string
+    dropped: { period_start: string | null; period_end: string; reason: string }[]
+  }
+  rows: MacroOverlayRow[]
+  correlation: { method: 'pearson'; r: number | null; n: number }
+}
+
 // ---- Async tasks ----
 export type TaskStatus = {
   task_id: string
