@@ -10,6 +10,8 @@ const api = vi.hoisted(() => ({
   listSeriesBundles: vi.fn(),
   getBundleObservations: vi.fn(),
   getMacroOverlay: vi.fn(),
+  // queries.ts keys bundle observations by this (merged from main with #151)
+  seriesTransformQuery: vi.fn(() => ({})),
 }))
 vi.mock('../../lib/api', () => api)
 
