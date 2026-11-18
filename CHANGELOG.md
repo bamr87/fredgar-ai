@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.3.0](https://github.com/bamr87/fredgar-ai/compare/v0.2.3...v0.3.0) (2026-11-18)
+
+
+### Features
+
+* **api:** align a company metric with a stored FRED series per fiscal period ([05ca445](https://github.com/bamr87/fredgar-ai/commit/05ca4452ad5ae121a42e33347209c5df5e06e961))
+* **frontend:** add a Macro tab that overlays a company metric on a FRED series ([434da28](https://github.com/bamr87/fredgar-ai/commit/434da284a9e6c47b3b653e58ea725fe1a6a5eb8e))
+* **macro:** chart a company metric against a FRED series per fiscal period ([18d3d69](https://github.com/bamr87/fredgar-ai/commit/18d3d6988081d0f796d459a984864cd753f3f93d))
+* **macro:** FRED units, frequency aggregation and ALFRED vintages on observations ([e3a4fde](https://github.com/bamr87/fredgar-ai/commit/e3a4fde9dca2b4d8948db021043d7a057c07c997))
+* **macro:** FRED units, frequency aggregation and ALFRED vintages on observations ([92abed2](https://github.com/bamr87/fredgar-ai/commit/92abed27e9206a8a9fbcd8333504a45ceccac47f)), closes [#112](https://github.com/bamr87/fredgar-ai/issues/112)
+
+
+### Bug Fixes
+
+* **api:** add UPS-BE-10/11 /healthz, /readyz, /version and Docker HEALTHCHECK ([10b1721](https://github.com/bamr87/fredgar-ai/commit/10b1721fdd16909beebe7227e54bbfe4a861b90c))
+* **api:** return 400 for an invalid cik on /filings/search/ ([be60e2f](https://github.com/bamr87/fredgar-ai/commit/be60e2f94746c1d8e58a080aead1167820de8f72))
+* **api:** return 400 for an invalid cik on /filings/search/ ([ab87e43](https://github.com/bamr87/fredgar-ai/commit/ab87e43e76a0db7e229922cdffd00cf4da54a2b9)), closes [#126](https://github.com/bamr87/fredgar-ai/issues/126)
+* **docker:** run the static UI as unprivileged nginx on port 8080 with a HEALTHCHECK ([bbc0a2e](https://github.com/bamr87/fredgar-ai/commit/bbc0a2ee63f357b97ae79d20e26bf3f8ab2a95a0)), closes [#106](https://github.com/bamr87/fredgar-ai/issues/106)
+* **frontend:** add a skip link and a main landmark to AppShell ([6413042](https://github.com/bamr87/fredgar-ai/commit/6413042119abe43d18fcadd5584c2a1f05028703))
+* **frontend:** add a skip link and a main landmark to AppShell ([2ce4453](https://github.com/bamr87/fredgar-ai/commit/2ce445394d969959b3f889db59ac42c48c86ecab)), closes [#119](https://github.com/bamr87/fredgar-ai/issues/119)
+* **macro:** drop a fiscal window whose first observation is missing ([ba52ba9](https://github.com/bamr87/fredgar-ai/commit/ba52ba90fc063bd24d20cc7636bd1d850b4a83a3))
+* measure enrichment coverage and run the static UI as non-root nginx ([fa63d9f](https://github.com/bamr87/fredgar-ai/commit/fa63d9fe76e6f120e0131fdf76224f760aebbdd5))
+
 ## [0.2.3](https://github.com/bamr87/fredgar-ai/compare/v0.2.2...v0.2.3) (2026-11-12)
 
 
