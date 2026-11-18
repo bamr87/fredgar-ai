@@ -2,11 +2,11 @@
 
 # fredgar-ai
 
-> Django + DRF backend and Vite/React UI for SEC EDGAR company data and FRED macro series, with AI-assisted analysis layered on top.
+> Fredgar AI's direction is to become the ultimate open home for all things financial: data, tools, resources and transparency, with queryable and auditable SEC EDGAR and FRED data, cited AI, and API-first access for everyone ([constitution](docs/constitution.md) §1).
 
 ## What this repo is
 
-**Fredgar AI** (FRED + EDGAR, with AI) serves SEC EDGAR company data (filings, XBRL facts, derived metrics, leadership) and optional FRED macro series through a versioned REST API, a Vite/React UI in [`frontend/`](frontend/), and a static public mirror on GitHub Pages. Python lives under [`src/`](src/), tests under [`tests/`](tests/). The database is SQLite by default and PostgreSQL when `DATABASE_URL` is set (Docker/CI Postgres uses user/password/db `fredgar`; the CI test database is `test_fredgar`). A change is done when `ruff check src tests`, `pytest -q` and the migration check pass, a frontend change also passes `npm run lint && npm run build`, the generated reference is current, and the nearest README or `docs/` page reflects it.
+**Fredgar AI** (FRED + EDGAR, with AI) aims to become the ultimate open home for all things financial, and today serves SEC EDGAR company data (filings, XBRL facts, derived metrics, leadership) and optional FRED macro series through a versioned REST API, a Vite/React UI in [`frontend/`](frontend/), and a static public mirror on GitHub Pages. The missions are in [`docs/constitution.md`](docs/constitution.md) §1. Python lives under [`src/`](src/), tests under [`tests/`](tests/). The database is SQLite by default and PostgreSQL when `DATABASE_URL` is set (Docker/CI Postgres uses user/password/db `fredgar`; the CI test database is `test_fredgar`). A change is done when `ruff check src tests`, `pytest -q` and the migration check pass, a frontend change also passes `npm run lint && npm run build`, the generated reference is current, and the nearest README or `docs/` page reflects it.
 
 ## Stack & commands
 

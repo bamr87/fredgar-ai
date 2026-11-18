@@ -6,11 +6,21 @@
 
 ## 1. Document overview
 
-### 1.1 Purpose
+### 1.1 Missions
+
+Fredgar AI's direction is to become the ultimate open home for all things financial — data, tools, resources and transparency, gathered in one place that anyone can inspect and reuse.
+
+1. **Provide data, tools, resources and transparency for all stakeholders, finance professionals and the general public.** Analysts, researchers, operators, builders, and retail and prosumer investors are first-class audiences. The aim is a shared, open commons: the same sources, the same tools, and the same trail of evidence for everyone.
+2. **Make every public financial fact queryable, reproducible and auditable, and let AI explain it only with citations.** The path starts with SEC EDGAR company data and FRED macro series and widens from there. The structured warehouse is the system of record; every figure and enrichment claim keeps a path to its evidence; estimates are never blended with reported facts; optional AI stays grounded in retrieved source text rather than replacing it.
+3. **Put that record in every builder's and operator's hands, and make joining private company lists to public issuers effortless and auditable.** Serve it through a versioned API, a clear interface and a public mirror, so developers can integrate anywhere and operators can match CRM lists to SEC issuers with a trail of evidence — an open toolkit for working with all things financial.
+
+These missions set the course; they do not claim the work is finished. They serve the goals in §2.1 and the differentiation in §2.3. They are also [constitution](docs/constitution.md) §1; changing them requires an amendment (constitution §8).
+
+### 1.2 Purpose
 
 This PRD describes **Fredgar AI** (FRED + EDGAR, with AI; repository: **fredgar-ai**): a web-oriented system to extract, normalize, and explore **SEC EDGAR** company and filing data alongside **FRED** macro series, with a path toward **AI-assisted** interpretation and summaries. The long-term vision includes LLM-driven parsing, narrative insights, and rich visualizations; the **current product** emphasizes **direct SEC APIs**, a **structured warehouse** (companies, filings, XBRL facts, derived metrics), a **versioned REST API**, and a **React** UI.
 
-### 1.2 Scope
+### 1.3 Scope
 
 | Area | Status |
 |------|--------|
@@ -18,7 +28,7 @@ This PRD describes **Fredgar AI** (FRED + EDGAR, with AI; repository: **fredgar-
 | **In scope (shipped today)** | Django + DRF backend; `sec_edgar` (SEC client, HTM ingest, submissions/facts sync); `warehouse` models and CRM staging/match flows; `public_data` + FRED; Vite/React frontend; Docker Compose; CI (Ruff, migrations, pytest, frontend build). |
 | **Out of scope (near term)** | Real-time trading, brokerage integration, custom model training, non-SEC primary sources (except optional FRED and future third-party enrichments). |
 
-### 1.3 Version history
+### 1.4 Version history
 
 | Version | Date | Notes |
 |---------|------|--------|
@@ -27,12 +37,13 @@ This PRD describes **Fredgar AI** (FRED + EDGAR, with AI; repository: **fredgar-
 | 2.0 | 2026-03-28 | Aligned with implemented stack; removed duplicate sections; added implementation status and roadmap split. |
 | 2.1 | 2026-09-20 | Distributed extract storage spec (incremental EDGAR/FRED cache, Kaggle + local clean snapshots). |
 | 2.2 | 2026-09-20 | Bonus: Kaggle inbound identify/extract/enrich for companies, industries, markets, economies. |
+| 2.3 | 2026-11-16 | Three missions added as §1.1, aiming to be the ultimate open home for all things financial (constitution amendment 0002); later §1 headings renumbered. |
 
-### 1.4 Stakeholders
+### 1.5 Stakeholders
 
 - **Product owner / development**: Core maintainers of this repository.
 - **Engineering**: Backend (Django), frontend (React/TypeScript), data/SEC integration.
-- **End users**: Analysts, researchers, operators matching CRM data to SEC issuers, and (eventually) retail/prosumer investors.
+- **End users**: All stakeholders, finance professionals and the general public, including analysts, researchers, operators matching CRM data to SEC issuers, developers using the API, and retail and prosumer investors.
 - **External**: SEC fair-access and `User-Agent` policy; FRED API terms when used.
 
 ---

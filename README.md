@@ -1,12 +1,12 @@
 # Fredgar AI
 
-> Django + React app for exploring SEC EDGAR company data and FRED macro series, with AI-assisted summaries.
+> Fredgar AI's direction is to become the ultimate open home for all things financial: data, tools, resources and transparency, with queryable and auditable SEC EDGAR and FRED data, cited AI, and API-first access for everyone ([constitution](docs/constitution.md) §1).
 
 [![CI](https://github.com/bamr87/fredgar-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/bamr87/fredgar-ai/actions/workflows/ci.yml) [![License](https://img.shields.io/github/license/bamr87/fredgar-ai)](LICENSE) [![Live site](https://img.shields.io/badge/live-bamr87.github.io%2Ffredgar--ai-2ea44f)](https://bamr87.github.io/fredgar-ai/)
 
 ## Overview
 
-**Fredgar AI** (FRED + EDGAR, with AI) is a Django + Django REST Framework backend with a Vite/React UI for **SEC EDGAR** company data and optional **FRED** macro series, with AI-assisted interpretation and summaries. A weekly GitHub Pages build publishes a static, no-login mirror of the warehouse at [bamr87.github.io/fredgar-ai](https://bamr87.github.io/fredgar-ai/).
+**Fredgar AI** (FRED + EDGAR, with AI) aims to become the ultimate open home for all things financial — data, tools, resources and transparency for all stakeholders, finance professionals and the general public — starting with **SEC EDGAR** company data and optional **FRED** macro series, a Django + Django REST Framework backend, and a Vite/React UI, with AI-assisted summaries grounded in filing text. A weekly GitHub Pages build publishes a static, no-login mirror of the warehouse at [bamr87.github.io/fredgar-ai](https://bamr87.github.io/fredgar-ai/). The missions are in [constitution §1](docs/constitution.md#1-missions).
 
 ## Features
 

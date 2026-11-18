@@ -6,11 +6,17 @@
 > Agents read this before [AGENTS.md](../AGENTS.md) conventions, the [PRD](../PRD.md), or the
 > [feature catalog](../features/features.yml). Ratified by merged PR; amended only per § 8.
 
-## 1. Mission
+## 1. Missions
 
-This PRD describes Fredgar AI (FRED + EDGAR, with AI; repository: fredgar-ai): a web-oriented system to extract, normalize, and explore SEC EDGAR company and filing data alongside FRED macro series, with a path toward AI-assisted interpretation and summaries. The long-term vision includes LLM-driven parsing, narrative insights, and rich visualizations; the current product emphasizes direct SEC APIs, a structured warehouse (companies, filings, XBRL facts, derived metrics), a versioned REST API, and a React UI.
+Fredgar AI's direction is to become the ultimate open home for all things financial — data, tools, resources and transparency, gathered in one place that anyone can inspect and reuse.
 
-_Source: [PRD.md](../PRD.md)._
+1. **Provide data, tools, resources and transparency for all stakeholders, finance professionals and the general public.** Analysts, researchers, operators, builders, and retail and prosumer investors are first-class audiences. The aim is a shared, open commons: the same sources, the same tools, and the same trail of evidence for everyone.
+2. **Make every public financial fact queryable, reproducible and auditable, and let AI explain it only with citations.** The path starts with SEC EDGAR company data and FRED macro series and widens from there. The structured warehouse is the system of record; every figure and enrichment claim keeps a path to its evidence; estimates are never blended with reported facts; optional AI stays grounded in retrieved source text rather than replacing it.
+3. **Put that record in every builder's and operator's hands, and make joining private company lists to public issuers effortless and auditable.** Serve it through a versioned API, a clear interface and a public mirror, so developers can integrate anywhere and operators can match CRM lists to SEC issuers with a trail of evidence — an open toolkit for working with all things financial.
+
+These missions set the course; they do not claim the work is finished. They serve the PRD goals in §2.1 and the differentiation in §2.3: transparent SEC-sourced pipelines, API-first design, CRM-to-CIK workflows, and a planned AI layer on structured facts.
+
+_Source: [PRD.md](../PRD.md) §1.1._
 
 ## 2. Invariants (non-negotiable)
 
