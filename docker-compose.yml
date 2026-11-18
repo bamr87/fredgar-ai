@@ -136,7 +136,7 @@ services:
   frontend:
     profiles:
       - dev
-    image: node:25-trixie-slim
+    image: node:26-trixie-slim
     working_dir: /app
     volumes:
       - ./frontend:/app
