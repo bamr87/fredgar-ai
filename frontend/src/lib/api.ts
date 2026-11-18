@@ -14,6 +14,9 @@ import type {
   FactsFacets,
   Filing,
   FinancialStatement,
+  FredAggregation,
+  FredFrequency,
+  FredUnits,
   Health,
   LatestByConcepts,
   Leadership,
@@ -159,8 +162,33 @@ export const peerFactCompare = (id: number, concept: string, taxonomy = 'us-gaap
 // ---- Macro / public series ----
 export const listSeriesBundles = (p?: { page?: number }) =>
   httpGet<Paginated<SeriesBundle>>(`${V}/series-bundles/${qs(p ?? {})}`)
-export const getBundleObservations = (slug: string, perSeries = 2000) =>
-  httpGet<BundleObservations>(`${V}/series-bundles/${slug}/observations/${qs({ per_series: perSeries })}`)
+
+/** FRED transform for the observation endpoints (FR-MAC-001); every field is optional. */
+export type SeriesTransformParams = {
+  units?: FredUnits
+  /** '' = the series' own frequency. */
+  frequency?: FredFrequency | ''
+  aggregation?: FredAggregation
+  /** YYYY-MM-DD; the server answers 400 unless ENABLE_FRED_VINTAGES is on. */
+  vintageDate?: string
+}
+
+/** Query params for a transform, sending only what differs from the API's defaults (lin, own
+ *  frequency, avg), so an untransformed request is exactly the one the UI sent before. */
+export function seriesTransformQuery(t: SeriesTransformParams = {}): Record<string, string | undefined> {
+  const frequency = t.frequency || undefined
+  return {
+    units: t.units && t.units !== 'lin' ? t.units : undefined,
+    frequency,
+    aggregation: frequency && t.aggregation && t.aggregation !== 'avg' ? t.aggregation : undefined,
+    vintage_date: t.vintageDate || undefined,
+  }
+}
+
+export const bundleObservationsPath = (slug: string, perSeries = 2000, t: SeriesTransformParams = {}) =>
+  `${V}/series-bundles/${slug}/observations/${qs({ per_series: perSeries, ...seriesTransformQuery(t) })}`
+export const getBundleObservations = (slug: string, perSeries = 2000, t: SeriesTransformParams = {}) =>
+  httpGet<BundleObservations>(bundleObservationsPath(slug, perSeries, t))
 
 // ---- Tasks ----
 export const getTask = (taskId: string) => httpGet<TaskStatus>(`${V}/tasks/${taskId}/`)

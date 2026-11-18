@@ -1,11 +1,14 @@
-/** Pure helpers for the macro workspace: range windows, transforms (level / YoY /
- *  index=100), and period-change stats. Frequency-agnostic via date-based lookups. */
-import type { BundleObservations } from './types'
+/** Pure helpers for the macro workspace: range windows, the Units control (FRED's units,
+ *  applied by the API, plus a client-side Index=100 rebase), and period-change stats.
+ *  Frequency-agnostic via date-based lookups. */
+import type { BundleObservations, FredAggregation, FredFrequency, FredUnits } from './types'
 
 export type RawPoint = { date: string; value: number }
 export type ChartPoint = { x: string; y: number | null }
 export type RangeKey = '1' | '3' | '5' | '10' | 'max'
-export type Transform = 'level' | 'yoy' | 'index'
+/** The Units control: every FRED unit (computed server-side), plus `index`, the levels
+ *  rebased to 100 at the window start in the browser, as FRED's own graph offers. */
+export type Transform = FredUnits | 'index'
 
 export const RANGE_OPTIONS: { value: RangeKey; label: string }[] = [
   { value: '1', label: '1Y' },
@@ -15,11 +18,59 @@ export const RANGE_OPTIONS: { value: RangeKey; label: string }[] = [
   { value: 'max', label: 'Max' },
 ]
 
+/** Labels and formulas as FRED documents them; n = observations per year. */
 export const TRANSFORM_OPTIONS: { value: Transform; label: string; hint: string }[] = [
-  { value: 'level', label: 'Level', hint: 'Raw reported values' },
-  { value: 'yoy', label: 'YoY %', hint: 'Year-over-year percent change' },
-  { value: 'index', label: 'Index=100', hint: 'Rebased to 100 at the window start' },
+  { value: 'lin', label: 'Levels', hint: 'Values as reported' },
+  { value: 'index', label: 'Index (=100)', hint: 'Levels rebased to 100 at the window start' },
+  { value: 'chg', label: 'Change', hint: 'Change: x(t) − x(t−1)' },
+  { value: 'ch1', label: 'Change from year ago', hint: 'Change from year ago: x(t) − x(t−n)' },
+  { value: 'pch', label: 'Percent change', hint: 'Percent change: (x(t) / x(t−1) − 1) × 100' },
+  { value: 'pc1', label: 'Percent change from year ago', hint: 'Percent change from year ago: (x(t) / x(t−n) − 1) × 100' },
+  { value: 'pca', label: 'Compounded annual rate of change', hint: 'Compounded annual rate: ((x(t) / x(t−1))^n − 1) × 100' },
+  { value: 'cch', label: 'Continuously compounded rate of change', hint: 'Continuously compounded: (ln x(t) − ln x(t−1)) × 100' },
+  { value: 'cca', label: 'Continuously compounded annual rate of change', hint: 'Continuously compounded annual: (ln x(t) − ln x(t−1)) × 100 × n' },
+  { value: 'log', label: 'Natural log', hint: 'Natural log: ln x(t)' },
 ]
+
+/** Aggregation targets ('' keeps each series at its own frequency). */
+export const FREQUENCY_OPTIONS: { value: FredFrequency | ''; label: string }[] = [
+  { value: '', label: 'Native frequency' },
+  { value: 'w', label: 'Weekly, ending Friday' },
+  { value: 'm', label: 'Monthly' },
+  { value: 'q', label: 'Quarterly' },
+  { value: 'sa', label: 'Semiannual' },
+  { value: 'a', label: 'Annual' },
+]
+
+export const AGGREGATION_OPTIONS: { value: FredAggregation; label: string }[] = [
+  { value: 'avg', label: 'Average' },
+  { value: 'sum', label: 'Sum' },
+  { value: 'eop', label: 'End of period' },
+]
+
+const PERCENT_UNITS: readonly Transform[] = ['pch', 'pc1', 'pca', 'cch', 'cca']
+
+/** The Units value of a `?t=` link; the old `level` and `yoy` links read as `lin` and `pc1`. */
+export function parseTransform(v: string | null): Transform {
+  if (v === 'level') return 'lin'
+  if (v === 'yoy') return 'pc1'
+  return TRANSFORM_OPTIONS.find((o) => o.value === v)?.value ?? 'lin'
+}
+
+/** The FRED units to request: `index` rebases the levels client-side. */
+export function serverUnits(t: Transform): FredUnits {
+  return t === 'index' ? 'lin' : t
+}
+
+/** Units whose values are percentages (shown with a % sign). */
+export function isPercentTransform(t: Transform): boolean {
+  return PERCENT_UNITS.includes(t)
+}
+
+/** Levels (as reported or indexed): period changes of these read as percent changes. */
+export function isLevelTransform(t: Transform): boolean {
+  return t === 'lin' || t === 'index'
+}
 
 /** Extract a single series' sorted numeric points from a bundle-observations payload. */
 export function seriesPoints(obs: BundleObservations, seriesId: string): RawPoint[] {
@@ -30,10 +81,9 @@ export function seriesPoints(obs: BundleObservations, seriesId: string): RawPoin
     .sort((a, b) => a.date.localeCompare(b.date))
 }
 
-function shift(dateStr: string, opts: { years?: number; days?: number }): string {
+function shiftDays(dateStr: string, days: number): string {
   const d = new Date(`${dateStr}T00:00:00`)
-  if (opts.years) d.setFullYear(d.getFullYear() + opts.years)
-  if (opts.days) d.setDate(d.getDate() + opts.days)
+  d.setDate(d.getDate() + days)
   return d.toISOString().slice(0, 10)
 }
 
@@ -73,19 +123,15 @@ function nearest(points: RawPoint[], target: string, hi: number, tolDays = 45): 
   return best && bestDiff <= tolDays * 86400000 ? best : null
 }
 
-/** Transform points to chart-ready values. */
+/** Chart-ready values: the API's values as they are (it already applied the FRED units), or
+ *  for `index` the levels rebased to 100 at the first non-zero value in the window. */
 export function applyTransform(points: RawPoint[], t: Transform): ChartPoint[] {
   if (points.length === 0) return []
-  if (t === 'level') return points.map((p) => ({ x: p.date, y: p.value }))
   if (t === 'index') {
     const base = points.find((p) => p.value !== 0)?.value
     return points.map((p) => ({ x: p.date, y: base ? (p.value / base) * 100 : null }))
   }
-  // YoY %: compare to the value ~1 year earlier (nearest by date).
-  return points.map((p, i) => {
-    const prev = nearest(points, shift(p.date, { years: -1 }), i)
-    return { x: p.date, y: prev && prev.value !== 0 ? (p.value / prev.value - 1) * 100 : null }
-  })
+  return points.map((p) => ({ x: p.date, y: p.value }))
 }
 
 export type Change = { abs: number | null; pct: number | null }
@@ -94,7 +140,7 @@ export type Change = { abs: number | null; pct: number | null }
 export function changeOver(points: RawPoint[], days: number): Change {
   if (points.length < 2) return { abs: null, pct: null }
   const last = points[points.length - 1]
-  const prev = nearest(points, shift(last.date, { days: -days }), points.length - 1, days < 60 ? 20 : 50)
+  const prev = nearest(points, shiftDays(last.date, -days), points.length - 1, days < 60 ? 20 : 50)
   if (!prev) return { abs: null, pct: null }
   return { abs: last.value - prev.value, pct: prev.value !== 0 ? (last.value / prev.value - 1) * 100 : null }
 }

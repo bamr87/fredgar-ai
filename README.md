@@ -54,6 +54,7 @@ See [`src/.env.example`](src/.env.example). Important:
 
 - **`USER_AGENT_EMAIL`**: SEC requires a descriptive `User-Agent` identifying you.
 - **`FRED_API_KEY`**: needed for `sync_series_bundle` / FRED observations.
+- **`ENABLE_FRED_VINTAGES`**: off by default; turns on ALFRED vintages (`?vintage_date=`, `sync_series_vintage`).
 - **`DJANGO_SECRET_KEY`**: set a strong value when `DJANGO_DEBUG=false`.
 
 ## Common tasks
@@ -70,6 +71,7 @@ python manage.py generate_static_site --ticker AAPL --output ../site   # static 
 python manage.py publish_static_site --output ../site   # sync the default cohort from SEC + render (the GitHub Pages build)
 python manage.py refresh_series_bundles            # register + FRED-sync all series bundles
 python manage.py sync_series_bundle --slug core    # or sync one bundle by slug (needs FRED_API_KEY)
+python manage.py sync_series_vintage --series GDPC1 --as-of 2020-01-01   # a series as FRED published it then (ENABLE_FRED_VINTAGES)
 ```
 
 The same sync actions are on the API, for example `POST /api/v1/companies/{id}/sync-submissions/`. Every route and command is listed in the generated [`docs/reference/`](docs/reference/), and [`docs/api-and-cli.md`](docs/api-and-cli.md) explains how they fit together. The static site renders offline HTML — one page per company with statements, derived metrics, filings and facts, each with copy and CSV/JSON downloads — and [`.github/workflows/pages.yml`](.github/workflows/pages.yml) publishes it weekly; see [`docs/static-site.md`](docs/static-site.md).

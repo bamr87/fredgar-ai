@@ -37,6 +37,7 @@ services:
       ENABLE_TIKA: ${ENABLE_TIKA:-false}
       TIKA_SERVER_ENDPOINT: ${TIKA_SERVER_ENDPOINT:-http://tika:9998}
       FRED_API_KEY: ${FRED_API_KEY:-}
+      ENABLE_FRED_VINTAGES: ${ENABLE_FRED_VINTAGES:-false}
     volumes:
       - ./data:/app/data
     depends_on:

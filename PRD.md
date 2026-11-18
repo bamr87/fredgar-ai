@@ -191,7 +191,7 @@ Every user-facing capability has a stable id in the feature catalog [`features/f
 | [FREDGAR-009](features/features.yml) | Core finance formulas and ratio metrics | shipped | [`src/warehouse/services/finance_formulas.py`](src/warehouse/services/finance_formulas.py) · [`docs/finance-formulas.md`](docs/finance-formulas.md) | FR-ANL-001 |
 | [FREDGAR-010](features/features.yml) | Institutional holdings (13F) | planned | [`PRD.md`](PRD.md) | FR-OWN-001 |
 | [FREDGAR-011](features/features.yml) | Watchlist and new-filing alerts | planned | [`PRD.md`](PRD.md) | FR-ALR-001 |
-| [FREDGAR-012](features/features.yml) | FRED transforms and vintages | planned | [`PRD.md`](PRD.md) | FR-MAC-001 |
+| [FREDGAR-012](features/features.yml) | FRED transforms and vintages | shipped | [`src/public_data/services/transforms.py`](src/public_data/services/transforms.py) · [`docs/api-and-cli.md`](docs/api-and-cli.md) | FR-MAC-001 |
 | [FREDGAR-013](features/features.yml) | Company metric vs macro overlay | planned | [`PRD.md`](PRD.md) | FR-ANL-002 |
 
 **Requirement → feature trace**

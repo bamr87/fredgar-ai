@@ -52,20 +52,48 @@ class FredProvider:
         )
 
     def fetch_series_observations(
-        self, external_id: str, observation_start: date | None = None
+        self,
+        external_id: str,
+        observation_start: date | None = None,
+        *,
+        realtime_start: date | None = None,
+        realtime_end: date | None = None,
     ) -> tuple[list[ObservationPoint], str]:
+        """Observations of a series; ``realtime_start``/``realtime_end`` ask ALFRED for a past vintage."""
         params: dict[str, Any] = {"series_id": external_id}
         if observation_start:
             params["observation_start"] = observation_start.isoformat()
-        data = self._get(FRED_OBSERVATIONS_URL, params)
+        realtime: dict[str, str] = {}
+        if realtime_start:
+            realtime["realtime_start"] = realtime_start.isoformat()
+        if realtime_end:
+            realtime["realtime_end"] = realtime_end.isoformat()
+        data = self._get(FRED_OBSERVATIONS_URL, {**params, **realtime})
         out: list[ObservationPoint] = []
         for row in data.get("observations") or []:
             if row.get("value") in (".", None, ""):
                 continue
             try:
                 d = datetime.strptime(row["date"], "%Y-%m-%d").date()
-                out.append(ObservationPoint(d, Decimal(str(row["value"]))))
+                out.append(
+                    ObservationPoint(
+                        d,
+                        Decimal(str(row["value"])),
+                        realtime_start=_iso_date(row.get("realtime_start")),
+                        realtime_end=_iso_date(row.get("realtime_end")),
+                    )
+                )
             except (ValueError, KeyError, TypeError) as e:
                 logger.debug("skip row %s: %s", row, e)
-        source = f"{FRED_OBSERVATIONS_URL}?{urlencode({'series_id': external_id})}"
+        source = f"{FRED_OBSERVATIONS_URL}?{urlencode({'series_id': external_id, **realtime})}"
         return out, source
+
+
+def _iso_date(value: Any) -> date | None:
+    """A FRED ``YYYY-MM-DD`` field as a date; None when absent or malformed."""
+    if not isinstance(value, str):
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
