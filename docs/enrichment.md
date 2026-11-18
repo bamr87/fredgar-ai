@@ -157,6 +157,8 @@ The same reasoning guards `edgar_issuer`, structurally: blocking on the sorted t
 
 Six adversarial fixtures guard this in [`tests/enrichment/test_verify.py`](../tests/enrichment/fixtures/): a real site, a `@graph`-nested one, a site with no structured data, a parked domain, an aggregator profile, and the wrong company.
 
+Malformed pages are read as far as they go. A JSON-LD block that is not valid JSON, or is nested deeply enough to raise `RecursionError`, is skipped on its own while the page's other blocks and fields are still harvested; if the HTML parser itself fails, whatever it extracted before the failure is kept. Neither case is silent: both log at `DEBUG` on the `enrichment.providers.webdiscovery` logger, so raising that logger to `DEBUG` during a run shows every page the parser struggled with.
+
 ## API
 
 Read-only. Running providers spends SEC and search budget and takes minutes, so it belongs to `manage.py` (and Celery), not to a request a browser can retry.

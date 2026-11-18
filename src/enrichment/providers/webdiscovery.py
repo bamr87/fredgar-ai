@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import html
 import json
+import logging
 import re
 import urllib.parse
 from html.parser import HTMLParser
@@ -22,6 +23,8 @@ from html.parser import HTMLParser
 from ..core.model import Claim, Evidence
 from ..core.provider import BaseProvider, Cost
 from ..normalize import clean
+
+logger = logging.getLogger(__name__)
 
 # Aggregators and profile sites. These are excellent *references* and terrible
 # *websites* - mistaking one for the company's own domain poisons everything.
@@ -236,8 +239,10 @@ class _Extract(HTMLParser):
                 raw = "".join(self._ld_buf).strip()
                 try:
                     self.jsonld.append(json.loads(raw))
-                except Exception:
-                    pass
+                except (ValueError, RecursionError) as exc:
+                    # JSONDecodeError is a ValueError; absurdly deep nesting
+                    # raises RecursionError. Skip this block, keep the rest.
+                    logger.debug("skipping malformed JSON-LD block (%d chars): %s", len(raw), exc)
             elif self._skip:
                 self._skip -= 1
         elif tag == "style" and self._skip:
@@ -296,7 +301,18 @@ def parse_page(html_text: str) -> dict:
     try:
         p.feed(html_text)
     except Exception:
-        pass
+        # HTMLParser documents no exception set (old releases raised
+        # AssertionError on odd markup), and the handlers above run inside
+        # feed(). Keep whatever was extracted before the failure, but leave a
+        # trace so a parser bug shows up in a DEBUG run instead of vanishing.
+        line, col = p.getpos()
+        logger.debug(
+            "HTML parse stopped at line %d, column %d of a %d-char page; keeping the partial extract",
+            line,
+            col,
+            len(html_text),
+            exc_info=True,
+        )
     orgs = list(_iter_jsonld_orgs(p.jsonld))
     org = orgs[0] if orgs else {}
 

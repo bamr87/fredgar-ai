@@ -302,6 +302,18 @@ export type SeriesObservation = {
   retrieved_at: string
 }
 export type SeriesBundle = { id: number; slug: string; name: string; description: string }
+/** FRED `units` the API applies server-side (FR-MAC-001). */
+export type FredUnits = 'lin' | 'chg' | 'ch1' | 'pch' | 'pc1' | 'pca' | 'cch' | 'cca' | 'log'
+/** Frequencies the API aggregates to (FRED's codes). */
+export type FredFrequency = 'd' | 'w' | 'm' | 'q' | 'sa' | 'a'
+export type FredAggregation = 'avg' | 'sum' | 'eop'
+/** The transform the API applied, echoed when a request asked for one. */
+export type SeriesTransform = {
+  units: FredUnits
+  frequency: FredFrequency | null
+  aggregation: FredAggregation | null
+  vintage_date: string | null
+}
 export type BundleSeriesMeta = {
   external_id: string
   title: string
@@ -309,6 +321,10 @@ export type BundleSeriesMeta = {
   frequency: string
   note: string
   industries: string[]
+  /** With a transform: the FRED frequency code the values are at (a series lower than the request keeps its own). */
+  output_frequency?: string | null
+  /** With a vintage: why this series has no values. */
+  error?: string
 }
 export type BundleObservations = {
   bundle: string
@@ -317,6 +333,7 @@ export type BundleObservations = {
   count: number
   series: BundleSeriesMeta[]
   observations: { series: string; provider: string; date: string; value: string }[]
+  transform?: SeriesTransform
 }
 
 // ---- Async tasks ----
@@ -329,6 +346,7 @@ export type TaskStatus = {
 }
 
 // ---- Health & reference ----
-export type Health = { status: string; checks?: Record<string, boolean> }
+/** `/healthz` and `/readyz`: each check is `ok`, `skipped` or an `error: …` string. */
+export type Health = { status: 'ok' | 'degraded' | string; checks?: Record<string, string> }
 export type SicCode = { code: string; description?: string; office?: string; industry_title?: string }
 export type SicResponse = { count: number; results: SicCode[] }

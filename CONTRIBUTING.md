@@ -82,6 +82,10 @@ python manage.py makemigrations --check --dry-run   # CI-style
 - Releasing: [`docs/releasing.md`](docs/releasing.md)
 - Agent guide: [`AGENTS.md`](AGENTS.md)
 
+## Security
+
+Never report a vulnerability in a public issue or pull request. Follow [`SECURITY.md`](SECURITY.md) to report it privately, and keep live tokens out of the report.
+
 ## SEC usage
 
 Identify your application with a valid contact in `User-Agent` (`USER_AGENT_EMAIL` / `SEC_USER_AGENT_EMAIL` per settings). Follow [SEC fair access](https://www.sec.gov/os/webmaster-faq#code-support) guidance.

@@ -5,7 +5,7 @@ export PYTHONPATH := src
 export DJANGO_SETTINGS_MODULE := config.settings_test
 
 COV_ARGS := --cov=warehouse --cov=config --cov=sec_edgar --cov=public_data --cov=api \
-	--cov-report=term-missing --cov-fail-under=50
+	--cov=enrichment --cov-report=term-missing --cov-fail-under=50
 
 # The markdown prose gate's exclusions, stated once: the markdown-oneline workflow
 # runs `make prose`. CHANGELOG.md is written by release-please and SCHEMA.md by

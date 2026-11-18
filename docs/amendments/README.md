@@ -1,7 +1,9 @@
-<!-- kit: governance v0.1.0 -->
+<!-- kit: governance v0.1.1 -->
 # Amendments — fredgar-ai
 
-The append-only log of changes to [the constitution](../constitution.md). Process: constitution § 8.
+> The append-only log of changes to [the constitution](../constitution.md), one numbered record per amendment.
+
+Process: constitution § 8.
 
 - File name: `NNNN-kebab-slug.md`, next free number, never reused. Copy [0000-template.md](0000-template.md).
 - Status: `proposed` → `ratified` (PR merged) | `rejected` | `withdrawn` | `superseded`.
@@ -10,3 +12,4 @@ The append-only log of changes to [the constitution](../constitution.md). Proces
 | # | Title | Status | Affects |
 | --- | --- | --- | --- |
 | [0001](0001-ratify-constitution.md) | Ratify the constitution | ratified on merge | whole constitution |
+| [0002](0002-mission-statement.md) | Missions | proposed | constitution §1; PRD §1.1, §1.5 |

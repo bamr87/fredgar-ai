@@ -622,3 +622,39 @@ class EnrichmentGoldenField(models.Model):
 
     def __str__(self) -> str:
         return f"{self.field}={str(self.value)[:40]} ({self.provider})"
+
+
+class SeriesVintageObservation(models.Model):
+    """A FRED series observation as published on a past date: an ALFRED vintage (FR-MAC-001).
+
+    Behind ``ENABLE_FRED_VINTAGES``. ``vintage_date`` is the as-of date the vintage was
+    fetched for (FRED ``realtime_start = realtime_end = vintage_date``); ``realtime_start``
+    and ``realtime_end`` are the real-time period FRED reported for the value. Written and
+    read by ``public_data.services.vintages``, DB-first: FRED is asked once per series and
+    vintage date.
+    """
+
+    series = models.ForeignKey(
+        "public_data.ExternalSeries",
+        on_delete=models.CASCADE,
+        related_name="vintage_observations",
+    )
+    vintage_date = models.DateField()
+    observation_date = models.DateField()
+    value = models.DecimalField(max_digits=24, decimal_places=6)
+    realtime_start = models.DateField()
+    realtime_end = models.DateField()
+    source_url = models.URLField(max_length=1024, blank=True)
+    retrieved_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            # Also the index behind every (series, vintage_date) lookup.
+            models.UniqueConstraint(
+                fields=["series", "vintage_date", "observation_date"],
+                name="unique_series_vintage_observation",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.series_id}@{self.vintage_date}:{self.observation_date}={self.value}"

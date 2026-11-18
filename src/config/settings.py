@@ -222,6 +222,11 @@ S3_PREFIX = os.getenv('S3_PREFIX', '')
 ENABLE_TIKA = _env_bool('ENABLE_TIKA', False)
 TIKA_SERVER_ENDPOINT = os.getenv('TIKA_SERVER_ENDPOINT', 'http://localhost:9998')
 
+# FRED vintages (ALFRED: a series as known on a past date). Off by default; when on,
+# ?vintage_date= on the observation endpoints and `sync_series_vintage` fetch a vintage
+# from FRED once and store it in warehouse.SeriesVintageObservation (FR-MAC-001).
+ENABLE_FRED_VINTAGES = _env_bool('ENABLE_FRED_VINTAGES', False)
+
 # Embeddings (Company-360 AI foundation). Off by default — the ContentChunk schema
 # and retrieval exist regardless; embeddings populate only when a backend is enabled.
 ENABLE_EMBEDDINGS = _env_bool('ENABLE_EMBEDDINGS', False)
