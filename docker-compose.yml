@@ -103,7 +103,7 @@ services:
   tika:
     profiles:
       - tika
-    image: apache/tika:4.2.0-1
+    image: apache/tika:4.2.0-2
     ports:
       - "127.0.0.1:${FREDGAR_TIKA_PORT:-9998}:9998"
 
